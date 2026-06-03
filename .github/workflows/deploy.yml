@@ -5,26 +5,20 @@ on:
 
 jobs:
   deploy:
-    runs-on: [self-hosted, zeina ]
+    runs-on: [self-hosted, zeina]
 
     steps:
-      - name: Go to project folder
-        run: cd ~/mern-todo-app
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Pull latest code
-        run: |
-          cd ~/mern-todo-app
-          git pull origin main
+      - name: Show branch
+        run: git branch
 
       - name: Build containers
-        run: |
-          cd ~/mern-todo-app
-          docker compose build
+        run: docker compose build
 
       - name: Start containers
-        run: |
-          cd ~/mern-todo-app
-          docker compose up -d
+        run: docker compose up -d
 
       - name: Health check backend
         run: curl -f http://localhost:8002
