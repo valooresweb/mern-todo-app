@@ -1,0 +1,31 @@
+name: Deploy App
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Go to project folder
+        run: cd ~/mern-todo-app
+
+      - name: Pull latest code
+        run: git pull origin main
+
+      - name: Build containers
+        run: docker compose build
+
+      - name: Start app
+        run: docker compose up -d
+
+      - name: Verify backend
+        run: curl -f http://localhost:8002
+
+      - name: Verify frontend
+        run: curl -f http://localhost:3001
