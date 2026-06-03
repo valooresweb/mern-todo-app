@@ -5,7 +5,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: [self-hosted, zeerunner]
+    runs-on: [self-hosted, zeina ]
 
     steps:
       - name: Go to project folder
