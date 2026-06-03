@@ -1,0 +1,29 @@
+name: CI/CD 
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, gaelle]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+    
+      - name: Pull latest code 
+        run: |
+          cd /home/gaelle/g_app/todo-app
+          git pull origin main
+    
+      - name: Stop old containers
+        run: |
+          docker compose -f /home/gaelle/g_app/todo-app/docker-compose.yml down || true
+    
+      - name: Build and start containers
+        run: |
+          docker compose -f /home/gaelle/g_app/todo-app/docker-compose.yml up -d --build
+    
+      - name: Show running containers
+        run: docker ps
+
