@@ -1,31 +1,33 @@
-name: Deploy App
+name: Manual Deploy
 
 on:
-  push:
-    branches: [main]
+  workflow_dispatch:
 
 jobs:
   deploy:
-    runs-on: [ self-hosted , zeerunner ]
+    runs-on: [self-hosted, zeerunner]
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
       - name: Go to project folder
         run: cd ~/mern-todo-app
 
       - name: Pull latest code
-        run: git pull origin main
+        run: |
+          cd ~/mern-todo-app
+          git pull origin main
 
       - name: Build containers
-        run: docker compose build
+        run: |
+          cd ~/mern-todo-app
+          docker compose build
 
-      - name: Start app
-        run: docker compose up -d
+      - name: Start containers
+        run: |
+          cd ~/mern-todo-app
+          docker compose up -d
 
-      - name: Verify backend
+      - name: Health check backend
         run: curl -f http://localhost:8002
 
-      - name: Verify frontend
+      - name: Health check frontend
         run: curl -f http://localhost:3001
