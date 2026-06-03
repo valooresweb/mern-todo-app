@@ -8,16 +8,15 @@ jobs:
     runs-on: [self-hosted, zeina]
 
     steps:
-      - name: Update code on server
+      - name: Sync with GitHub
         run: |
           cd /home/zeina/mern-todo-app
-          git pull origin master
+          git fetch origin
+          git reset --hard origin/master
+          git clean -fd
 
-      - name: Restart containers
+      - name: Restart app
         run: |
           cd /home/zeina/mern-todo-app
           docker compose down
           docker compose up -d --build
-
-      - name: Show running containers
-        run: docker ps
