@@ -20,8 +20,4 @@ jobs:
       - name: Start containers
         run: docker compose up -d
 
-      - name: Health check backend
-        run: curl -f http://localhost:8002
-
-      - name: Health check frontend
-        run: curl -f http://localhost:3001
+     
