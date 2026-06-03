@@ -11,13 +11,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Show branch
-        run: git branch
+      - name: Build and start app
+        run: |
+          docker compose down
+          docker compose up -d --build
 
-      - name: Build containers
-        run: docker compose build
-
-      - name: Start containers
-        run: docker compose up -d
-
-     
+      - name: Show running containers
+        run: docker ps
