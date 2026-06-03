@@ -2,7 +2,11 @@ name: CI/CD
 
 on:
   workflow_dispatch:
+  
+env:
+  APP_DIR: /home/gaelle/g_app/todo-app
 
+  
 jobs:
   deploy:
     runs-on: [self-hosted, gaelle]
