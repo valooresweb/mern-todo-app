@@ -1,1 +1,21 @@
+name: Deploy App
 
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, r2]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy using server docker-compose
+        run: |
+          cd /home/zeina/mern-todo-app
+          docker compose down
+          docker compose up -d --build
+
+      - name: Show running containers
+        run: docker ps
