@@ -1,4 +1,4 @@
-name: Manual Deploy
+name: Deploy App
 
 on:
   workflow_dispatch:
@@ -8,11 +8,14 @@ jobs:
     runs-on: [self-hosted, zeina]
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Build and start app
+      - name: Update code on server
         run: |
+          cd /home/zeina/mern-todo-app
+          git pull origin master
+
+      - name: Restart containers
+        run: |
+          cd /home/zeina/mern-todo-app
           docker compose down
           docker compose up -d --build
 
