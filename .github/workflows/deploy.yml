@@ -7,7 +7,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: [self-hosted, runnerzei]
+    runs-on: [self-hosted, zeina]
 
     steps:
       - name: Sync with GitHub
