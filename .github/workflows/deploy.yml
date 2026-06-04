@@ -17,10 +17,16 @@ jobs:
           fetch-depth: 0
 
       - name: SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@v4
+        uses: SonarSource/sonarqube-scan-action@v6
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKENZEINA }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URLZEINA }}
+        with:
+          args: >
+            -Dsonar.projectKey=new-mern-project
+            -Dsonar.projectName="MERN App"
+            -Dsonar.sources=.
+            -Dsonar.sourceEncoding=UTF-8
 
   # ======================
   # 1. BUILD IMAGES
@@ -65,7 +71,6 @@ jobs:
   deploy:
     runs-on: r2
     needs: [build, backup]
-    if: success()
 
     steps:
       - uses: actions/checkout@v4
