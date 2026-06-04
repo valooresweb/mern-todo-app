@@ -4,63 +4,29 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  deploy:
+    runs-on: r2   # your server runner
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       # ======================
-      # BUILD BACKEND
+      # BUILD IMAGES ON SERVER
       # ======================
       - name: Build backend image
-        run: |
-          docker build -t mern-backend:latest -f backend/Dockerfile backend
+        run: docker build -t mern-backend:latest -f backend/Dockerfile backend
 
-      # ======================
-      # BUILD FRONTEND
-      # ======================
       - name: Build frontend image
+        run: docker build -t mern-frontend:latest -f frontend/Dockerfile frontend
+
+      # ======================
+      # CLEAN RESTART
+      # ======================
+      - name: Restart containers
         run: |
-          docker build -t mern-frontend:latest -f frontend/Dockerfile frontend
-
-      # ======================
-      # SAVE IMAGES
-      # ======================
-      - name: Save images
-        run: |
-          docker save mern-backend:latest -o backend.tar
-          docker save mern-frontend:latest -o frontend.tar
-
-      # ======================
-      # SEND TO SERVER
-      # ======================
-      - name: Copy images to server
-        run: |
-          scp -o StrictHostKeyChecking=no backend.tar frontend.tar user@YOUR_SERVER_IP:/tmp/
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-
-
-  deploy:
-    needs: build
-    runs-on: r2   # your self-hosted runner (server)
-
-    steps:
-      # ======================
-      # LOAD IMAGES
-      # ======================
-      - name: Load images on server
-        run: |
-          docker load -i /tmp/backend.tar
-          docker load -i /tmp/frontend.tar
-
-      # ======================
-      # RESTART WITH COMPOSE
-      # ======================
-      - name: Deploy with Docker Compose
-        run: |
-          cd /home/zeina/mern-todo-app
           docker compose down
-          docker compose up -d
+          docker compose up -d --build
+
+      - name: Show running containers
+        run: docker ps
