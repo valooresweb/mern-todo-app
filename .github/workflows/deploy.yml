@@ -5,28 +5,45 @@ on:
 
 jobs:
   deploy:
-    runs-on: r2   # your server runner
+    runs-on: r2   # your self-hosted server runner
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Set backup tag
+        run: echo "BACKUP_TAG=backup-$(date +%Y%m%d-%H%M%S)" >> $GITHUB_ENV
+
       # ======================
-      # BUILD IMAGES ON SERVER
+      # BUILD BACKEND IMAGE
       # ======================
       - name: Build backend image
-        run: docker build -t mern-backend:latest -f backend/Dockerfile backend
-
-      - name: Build frontend image
-        run: docker build -t mern-frontend:latest -f frontend/Dockerfile frontend
+        run: |
+          docker build \
+            -t mern-backend:latest \
+            -t mern-backend:$BACKUP_TAG \
+            -f backend/Dockerfile backend
 
       # ======================
-      # CLEAN RESTART
+      # BUILD FRONTEND IMAGE
+      # ======================
+      - name: Build frontend image
+        run: |
+          docker build \
+            -t mern-frontend:latest \
+            -t mern-frontend:$BACKUP_TAG \
+            -f frontend/Dockerfile frontend
+
+      # ======================
+      # RESTART CONTAINERS
       # ======================
       - name: Restart containers
         run: |
           docker compose down
-          docker compose up -d --build
+          docker compose up -d
 
+      # ======================
+      # SHOW STATUS
+      # ======================
       - name: Show running containers
-        run: docker ps
+        run: docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Status}}"
