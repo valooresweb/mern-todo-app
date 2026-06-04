@@ -1,0 +1,70 @@
+
+name: SonarQube Scan
+
+on:
+  workflow_dispatch:
+
+jobs:
+  sonar:
+    runs-on:
+      - self-hosted
+      - gaelle
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+
+      # Frontend
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm install
+
+      - name: Build frontend
+        run: |
+          cd frontend
+          npm run build
+
+      - name: SonarQube Frontend Scan
+        uses: SonarSource/sonarqube-scan-action@v4
+        env:
+          SONAR_TOKEN: ${{ secrets.G_SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.G_SONAR_HOST_URL }}
+        with:
+          args: >
+            -Dsonar.projectKey=mern-todo-app-frontend
+            -Dsonar.projectName="MERN Todo Frontend"
+            -Dsonar.sources=frontend/src
+            -Dsonar.sourceEncoding=UTF-8
+            -Dsonar.exclusions=**/node_modules/**
+
+
+      # Backend
+
+      - name: Install backend dependencies
+        run: |
+          cd backend
+          npm install
+
+      - name: SonarQube Backend Scan
+        uses: SonarSource/sonarqube-scan-action@v4
+        env:
+          SONAR_TOKEN: ${{ secrets.G_SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.G_SONAR_HOST_URL }}
+        with:
+          args: >
+            -Dsonar.projectKey=mern-todo-app-backend
+            -Dsonar.projectName="MERN Todo Backend"
+            -Dsonar.sources=backend
+            -Dsonar.sourceEncoding=UTF-8
+            -Dsonar.exclusions=**/node_modules/**
+
