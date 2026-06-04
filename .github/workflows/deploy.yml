@@ -6,9 +6,9 @@ on:
 jobs:
 
   # ======================
-  # 0. SONARQUBE SCAN
+  # FRONTEND SONAR (RUNS IN PARALLEL)
   # ======================
-  sonar:
+  sonar-frontend:
     runs-on: r2
 
     steps:
@@ -16,42 +16,43 @@ jobs:
         with:
           fetch-depth: 0
 
-      # ======================
-      # FRONTEND SCAN (same project)
-      # ======================
-      - name: Sonar Frontend
+      - name: Sonar Frontend Scan
         uses: SonarSource/sonarqube-scan-action@v6
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKENZEINA }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URLZEINA }}
         with:
           args: >
-            -Dsonar.projectKey=MERN App Backend
-            -Dsonar.projectName="MERN App"
+            -Dsonar.projectKey=mern-frontend
             -Dsonar.sources=frontend
-            -Dsonar.sourceEncoding=UTF-8
-
-      # ======================
-      # BACKEND SCAN (same project)
-      # ======================
-      - name: Sonar Backend
-        uses: SonarSource/sonarqube-scan-action@v6
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKENZEINA }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URLZEINA }}
-        with:
-          args: >
-            -Dsonar.projectKey=MERN App Backend
-            -Dsonar.projectName="MERN App"
-            -Dsonar.sources=backend
-            -Dsonar.sourceEncoding=UTF-8
 
   # ======================
-  # 1. BUILD IMAGES
+  # BACKEND SONAR (RUNS IN PARALLEL)
+  # ======================
+  sonar-backend:
+    runs-on: r2
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Sonar Backend Scan
+        uses: SonarSource/sonarqube-scan-action@v6
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKENZEINABACKEND }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URLZEINABACKEND }}
+        with:
+          args: >
+            -Dsonar.projectKey=mern-backend
+            -Dsonar.sources=backend
+
+  # ======================
+  # BUILD (WAIT FOR BOTH SONAR JOBS)
   # ======================
   build:
     runs-on: r2
-    needs: sonar
+    needs: [sonar-frontend, sonar-backend]
 
     steps:
       - uses: actions/checkout@v4
@@ -63,7 +64,7 @@ jobs:
         run: docker build -t zeina-frontend:latest -f frontend/Dockerfile frontend
 
   # ======================
-  # 2. BACKUP IMAGES
+  # BACKUP
   # ======================
   backup:
     runs-on: r2
@@ -84,7 +85,7 @@ jobs:
         run: docker save zeina-frontend:latest -o /home/zeina/backups/mern/$BACKUP_TIME/frontend.tar
 
   # ======================
-  # 3. DEPLOY
+  # DEPLOY
   # ======================
   deploy:
     runs-on: r2
