@@ -6,10 +6,28 @@ on:
 jobs:
 
   # ======================
+  # 0. SONARQUBE SCAN
+  # ======================
+  sonar:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v4
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
+  # ======================
   # 1. BUILD IMAGES
   # ======================
   build:
     runs-on: r2
+    needs: sonar
 
     steps:
       - uses: actions/checkout@v4
@@ -21,7 +39,7 @@ jobs:
         run: docker build -t zeina-frontend:latest -f frontend/Dockerfile frontend
 
   # ======================
-  # 2. BACKUP IMAGES (SAFE EVEN IF BUILD FAILS)
+  # 2. BACKUP IMAGES
   # ======================
   backup:
     runs-on: r2
