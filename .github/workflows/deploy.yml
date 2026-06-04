@@ -40,7 +40,7 @@ jobs:
           mkdir -p /home/zeina/backups/mern/$BACKUP_TIME
 
       # ======================
-      # SAVE IMAGES AS FILES
+      # SAVE BACKUPS AS FILES ONLY
       # ======================
       - name: Save backend image
         run: |
