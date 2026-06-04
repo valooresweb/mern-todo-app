@@ -70,8 +70,7 @@ jobs:
         with:
           node-version: 22
 
-
-      # Frontend
+      # FRONTEND ONLY
       - name: Install frontend dependencies
         run: |
           cd frontend
@@ -82,7 +81,7 @@ jobs:
           cd frontend
           npm run build
 
-      - name: SonarQube Frontend Scan
+      - name: SonarQube Scan (Frontend)
         uses: SonarSource/sonarqube-scan-action@v4
         env:
           SONAR_TOKEN: ${{ secrets.G_SONAR_TOKEN }}
@@ -90,12 +89,12 @@ jobs:
         with:
           args: >
             -Dsonar.projectKey=mern-todo-app
-            -Dsonar.projectName="MERN Todo Frontend"
+            -Dsonar.projectName="MERN Todo App Frontend"
             -Dsonar.sources=frontend/src
             -Dsonar.sourceEncoding=UTF-8
             -Dsonar.exclusions=**/node_modules/**
-
-
+            
+  
   # 3. STOP OLD CONTAINERS
   stop_containers:
     runs-on: [self-hosted, gaelle]
