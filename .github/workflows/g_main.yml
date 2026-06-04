@@ -1,12 +1,12 @@
-name: CI/CD 
+
+name: CI/CD
 
 on:
   workflow_dispatch:
-  
+
 env:
   APP_DIR: /home/gaelle/g_app/todo-app
 
-  
 jobs:
   deploy:
     runs-on: [self-hosted, gaelle]
@@ -14,15 +14,23 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-    
+
+      - name: Build backend image
+        run: |
+          docker build -t mern-backend:latest ./backend
+
+      - name: Build frontend image
+        run: |
+          docker build -t mern-frontend:latest ./frontend
+
       - name: Stop old containers
         run: |
-          docker compose -f /home/gaelle/g_app/todo-app/docker-compose.yml down || true
-    
-      - name: Build and start containers
+          docker compose -f $APP_DIR/docker-compose.yml down || true
+
+      - name: Start containers
         run: |
-          docker compose -f /home/gaelle/g_app/todo-app/docker-compose.yml up -d --build
-    
+          docker compose -f $APP_DIR/docker-compose.yml up -d
+
       - name: Show running containers
         run: docker ps
 
