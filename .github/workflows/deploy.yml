@@ -5,34 +5,53 @@ on:
 
 jobs:
   deploy:
-    runs-on: r2   # your self-hosted server runner
+    runs-on: r2   # self-hosted server
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # ======================
+      # TIMESTAMP
+      # ======================
       - name: Set backup tag
-        run: echo "BACKUP_TAG=backup-$(date +%Y%m%d-%H%M%S)" >> $GITHUB_ENV
+        run: echo "BACKUP_TAG=$(date +%Y%m%d-%H%M%S)" >> $GITHUB_ENV
 
       # ======================
-      # BUILD BACKEND IMAGE
+      # BUILD BACKEND
       # ======================
       - name: Build backend image
         run: |
           docker build \
             -t mern-backend:latest \
-            -t mern-backend:$BACKUP_TAG \
             -f backend/Dockerfile backend
 
       # ======================
-      # BUILD FRONTEND IMAGE
+      # BUILD FRONTEND
       # ======================
       - name: Build frontend image
         run: |
           docker build \
             -t mern-frontend:latest \
-            -t mern-frontend:$BACKUP_TAG \
             -f frontend/Dockerfile frontend
+
+      # ======================
+      # CREATE BACKUP FOLDER
+      # ======================
+      - name: Create backup directory
+        run: |
+          mkdir -p /backups/mern/$BACKUP_TAG
+
+      # ======================
+      # SAVE IMAGES AS FILES
+      # ======================
+      - name: Save backend image
+        run: |
+          docker save mern-backend:latest > /backups/mern/$BACKUP_TAG/backend.tar
+
+      - name: Save frontend image
+        run: |
+          docker save mern-frontend:latest > /backups/mern/$BACKUP_TAG/frontend.tar
 
       # ======================
       # RESTART CONTAINERS
