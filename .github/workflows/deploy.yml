@@ -5,7 +5,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: r2   # self-hosted server
+    runs-on: r2   # self-hosted runner
 
     steps:
       - name: Checkout code
@@ -36,22 +36,22 @@ jobs:
             -f frontend/Dockerfile frontend
 
       # ======================
-      # CREATE BACKUP FOLDER
+      # CREATE BACKUP FOLDER (SAFE PATH)
       # ======================
       - name: Create backup directory
         run: |
-          mkdir -p /backups/mern/$BACKUP_TAG
+          mkdir -p ~/backups/mern/$BACKUP_TAG
 
       # ======================
-      # SAVE IMAGES AS FILES
+      # SAVE BACKUP IMAGES AS FILES
       # ======================
       - name: Save backend image
         run: |
-          docker save mern-backend:latest > /backups/mern/$BACKUP_TAG/backend.tar
+          docker save mern-backend:latest > ~/backups/mern/$BACKUP_TAG/backend.tar
 
       - name: Save frontend image
         run: |
-          docker save mern-frontend:latest > /backups/mern/$BACKUP_TAG/frontend.tar
+          docker save mern-frontend:latest > ~/backups/mern/$BACKUP_TAG/frontend.tar
 
       # ======================
       # RESTART CONTAINERS
