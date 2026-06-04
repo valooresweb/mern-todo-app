@@ -9,65 +9,127 @@ env:
   BACKUP_DIR: /home/gaelle/g_app/backups
 
 jobs:
-  deploy:
+
+
+  # 1. PREPARE
+  prepare:
     runs-on: [self-hosted, gaelle]
+
+    outputs:
+      version: ${{ steps.version.outputs.version }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Generate image version
+        id: version
         run: |
-          echo "VERSION=$(date +'%Y%m%d-%H%M%S')" >> $GITHUB_ENV
+          VERSION=$(date +'%Y%m%d-%H%M%S')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-      # Create backup folders
+
+  # 2. BACKUP
+  backup:
+    runs-on: [self-hosted, gaelle]
+    needs: prepare
+
+    steps:
       - name: Create backup directory
         run: |
-          mkdir -p $BACKUP_DIR/versions/$VERSION/backend
-          mkdir -p $BACKUP_DIR/versions/$VERSION/frontend
+          mkdir -p $BACKUP_DIR/versions/${{ needs.prepare.outputs.version }}/backend
+          mkdir -p $BACKUP_DIR/versions/${{ needs.prepare.outputs.version }}/frontend
 
-      # Save previous latest images
       - name: Backup current images
         run: |
           if docker image inspect mern-backend:latest > /dev/null 2>&1; then
             docker save \
-              -o $BACKUP_DIR/versions/$VERSION/backend/backend.tar \
+              -o $BACKUP_DIR/versions/${{ needs.prepare.outputs.version }}/backend/backend.tar \
               mern-backend:latest
           fi
 
           if docker image inspect mern-frontend:latest > /dev/null 2>&1; then
             docker save \
-              -o $BACKUP_DIR/versions/$VERSION/frontend/frontend.tar \
+              -o $BACKUP_DIR/versions/${{ needs.prepare.outputs.version }}/frontend/frontend.tar \
               mern-frontend:latest
           fi
 
-      # Stop old containers
+
+  # 3. STOP OLD CONTAINERS
+  stop_containers:
+    runs-on: [self-hosted, gaelle]
+    needs: backup
+
+    steps:
       - name: Stop old containers
         run: |
           docker compose -f $APP_DIR/docker-compose.yml down || true
 
-      # Remove previous latest images
-      - name: Remove old latest images
+
+  # 4. REMOVE OLD IMAGES
+  remove_old_images:
+    runs-on: [self-hosted, gaelle]
+    needs: stop_containers
+
+    steps:
+      - name: Remove old backend image
         run: |
           docker rmi mern-backend:latest || true
+
+      - name: Remove old frontend image
+        run: |
           docker rmi mern-frontend:latest || true
 
-      # Build new latest images
+
+  # 5. BUILD BACKEND
+  build_backend:
+    runs-on: [self-hosted, gaelle]
+    needs: remove_old_images
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Build backend image
         run: |
           docker build -t mern-backend:latest ./backend
+
+  # 6. BUILD FRONTEND
+  build_frontend:
+    runs-on: [self-hosted, gaelle]
+    needs: remove_old_images
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Build frontend image
         run: |
           docker build -t mern-frontend:latest ./frontend
 
-      # Deploy
+  # 7. DEPLOY
+  deploy:
+    runs-on: [self-hosted, gaelle]
+    needs: [build_backend, build_frontend]
+
+    steps:
       - name: Start containers
         run: |
           docker compose -f $APP_DIR/docker-compose.yml up -d
 
+
+  # 8. VERIFY
+  verify:
+    runs-on: [self-hosted, gaelle]
+    needs: deploy
+
+    steps:
       - name: Show running containers
         run: docker ps
+
+      - name: Show Docker images
+        run: |
+          docker images | grep mern
 
       - name: Show backup folders
         run: |
