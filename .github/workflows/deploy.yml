@@ -18,40 +18,31 @@ jobs:
         run: echo "BACKUP_TIME=$(date +%Y%m%d-%H%M%S)" >> $GITHUB_ENV
 
       # ======================
-      # BUILD IMAGES (ONLY LATEST)
+      # BUILD (ONLY LATEST)
       # ======================
       - name: Build backend image
-        run: |
-          docker build \
-            -t mern-backend:latest \
-            -f backend/Dockerfile backend
+        run: docker build -t mern-backend:latest -f backend/Dockerfile backend
 
       - name: Build frontend image
-        run: |
-          docker build \
-            -t mern-frontend:latest \
-            -f frontend/Dockerfile frontend
+        run: docker build -t mern-frontend:latest -f frontend/Dockerfile frontend
 
       # ======================
-      # CREATE BACKUP FOLDER
+      # BACKUP DIRECTORY
       # ======================
-      - name: Create backup directory
-        run: |
-          mkdir -p /home/zeina/backups/mern/$BACKUP_TIME
+      - name: Create backup folder
+        run: mkdir -p /home/zeina/backups/mern/$BACKUP_TIME
 
       # ======================
-      # SAVE BACKUPS AS FILES ONLY
+      # SAVE BACKUPS (FILES ONLY)
       # ======================
       - name: Save backend image
-        run: |
-          docker save mern-backend:latest > /home/zeina/backups/mern/$BACKUP_TIME/backend.tar
+        run: docker save mern-backend:latest -o /home/zeina/backups/mern/$BACKUP_TIME/backend.tar
 
       - name: Save frontend image
-        run: |
-          docker save mern-frontend:latest > /home/zeina/backups/mern/$BACKUP_TIME/frontend.tar
+        run: docker save mern-frontend:latest -o /home/zeina/backups/mern/$BACKUP_TIME/frontend.tar
 
       # ======================
-      # RESTART CONTAINERS
+      # DEPLOY
       # ======================
       - name: Restart containers
         run: |
@@ -59,7 +50,7 @@ jobs:
           docker compose up -d
 
       # ======================
-      # SHOW STATUS
+      # STATUS
       # ======================
-      - name: Show running containers
+      - name: Show containers
         run: docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Status}}"
