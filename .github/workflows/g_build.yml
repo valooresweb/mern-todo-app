@@ -41,7 +41,7 @@ jobs:
           SONAR_HOST_URL: ${{ secrets.G_SONAR_HOST_URL }}
         with:
           args: >
-            -Dsonar.projectKey=mern-todo-app-frontend
+            -Dsonar.projectKey=mern-todo-app
             -Dsonar.projectName="MERN Todo Frontend"
             -Dsonar.sources=frontend/src
             -Dsonar.sourceEncoding=UTF-8
