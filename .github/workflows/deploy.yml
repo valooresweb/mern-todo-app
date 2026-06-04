@@ -23,7 +23,7 @@ jobs:
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URLZEINA }}
         with:
           args: >
-            -Dsonar.projectKey=mern-frontend
+            -Dsonar.projectKey=new-mern-project
             -Dsonar.sources=frontend
 
   # ======================
