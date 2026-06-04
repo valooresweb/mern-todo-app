@@ -9,7 +9,7 @@ jobs:
   # 0. SONARQUBE SCAN
   # ======================
   sonar:
-    runs-on: ubuntu-latest
+    runs-on: r2
 
     steps:
       - uses: actions/checkout@v4
