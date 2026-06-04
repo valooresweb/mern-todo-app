@@ -21,10 +21,10 @@ jobs:
       # BUILD (ONLY LATEST)
       # ======================
       - name: Build backend image
-        run: docker build -t mern-backend:latest -f backend/Dockerfile backend
+        run: docker build -t zeina-backend:latest -f backend/Dockerfile backend
 
       - name: Build frontend image
-        run: docker build -t mern-frontend:latest -f frontend/Dockerfile frontend
+        run: docker build -t zeina-frontend:latest -f frontend/Dockerfile frontend
 
       # ======================
       # BACKUP DIRECTORY
@@ -36,10 +36,10 @@ jobs:
       # SAVE BACKUPS (FILES ONLY)
       # ======================
       - name: Save backend image
-        run: docker save mern-backend:latest -o /home/zeina/backups/mern/$BACKUP_TIME/backend.tar
+        run: docker save zeina-backend:latest -o /home/zeina/backups/mern/$BACKUP_TIME/backend.tar
 
       - name: Save frontend image
-        run: docker save mern-frontend:latest -o /home/zeina/backups/mern/$BACKUP_TIME/frontend.tar
+        run: docker save zeina-frontend:latest -o /home/zeina/backups/mern/$BACKUP_TIME/frontend.tar
 
       # ======================
       # DEPLOY
