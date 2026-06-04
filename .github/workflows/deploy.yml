@@ -14,11 +14,11 @@ jobs:
       # ======================
       # TIMESTAMP
       # ======================
-      - name: Set backup tag
-        run: echo "BACKUP_TAG=$(date +%Y%m%d-%H%M%S)" >> $GITHUB_ENV
+      - name: Set timestamp
+        run: echo "BACKUP_TIME=$(date +%Y%m%d-%H%M%S)" >> $GITHUB_ENV
 
       # ======================
-      # BUILD BACKEND
+      # BUILD IMAGES (ONLY LATEST)
       # ======================
       - name: Build backend image
         run: |
@@ -26,9 +26,6 @@ jobs:
             -t mern-backend:latest \
             -f backend/Dockerfile backend
 
-      # ======================
-      # BUILD FRONTEND
-      # ======================
       - name: Build frontend image
         run: |
           docker build \
@@ -36,22 +33,22 @@ jobs:
             -f frontend/Dockerfile frontend
 
       # ======================
-      # CREATE BACKUP FOLDER (SAFE PATH)
+      # CREATE BACKUP FOLDER
       # ======================
       - name: Create backup directory
         run: |
-          mkdir -p ~/backups/mern/$BACKUP_TAG
+          mkdir -p /home/zeina/backups/mern/$BACKUP_TIME
 
       # ======================
-      # SAVE BACKUP IMAGES AS FILES
+      # SAVE IMAGES AS FILES
       # ======================
       - name: Save backend image
         run: |
-          docker save mern-backend:latest > ~/backups/mern/$BACKUP_TAG/backend.tar
+          docker save mern-backend:latest > /home/zeina/backups/mern/$BACKUP_TIME/backend.tar
 
       - name: Save frontend image
         run: |
-          docker save mern-frontend:latest > ~/backups/mern/$BACKUP_TAG/frontend.tar
+          docker save mern-frontend:latest > /home/zeina/backups/mern/$BACKUP_TIME/frontend.tar
 
       # ======================
       # RESTART CONTAINERS
