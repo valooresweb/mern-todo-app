@@ -53,14 +53,49 @@ jobs:
               -o $BACKUP_DIR/versions/${{ needs.prepare.outputs.version }}/frontend/frontend.tar \
               mern-frontend:latest
           fi
-
-
- 
-  
-  # 3. STOP OLD CONTAINERS
-  stop_containers:
+  # 3. SONARQUBE
+  sonar:
     runs-on: [self-hosted, gaelle]
     needs: backup
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # FRONTEND SCAN
+      - name: Sonar Frontend
+        uses: SonarSource/sonarqube-scan-action@v6
+        env:
+          SONAR_TOKEN: ${{ secrets.G_SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.G_SONAR_HOST_URL }}
+        with:
+          args: >
+            -Dsonar.projectKey=mern-todo-app
+            -Dsonar.projectName="MERN Todo Frontend"
+            -Dsonar.sources=frontend/src
+            -Dsonar.sourceEncoding=UTF-8
+            -Dsonar.exclusions=**/node_modules/**
+
+      # BACKEND SCAN
+      - name: Sonar Backend
+        uses: SonarSource/sonarqube-scan-action@v6
+        env:
+          SONAR_TOKEN: ${{ secrets.GG_SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.GG_SONAR_HOST_URL }}
+        with:
+          args: >
+            -Dsonar.projectKey=mern-todo-app-backend
+            -Dsonar.projectName="MERN Todo Backend"
+            -Dsonar.sources=backend
+            -Dsonar.sourceEncoding=UTF-8
+            -Dsonar.exclusions=**/node_modules/**
+  
+  # 4. STOP OLD CONTAINERS
+  stop_containers:
+    runs-on: [self-hosted, gaelle]
+    needs: sonar
 
     steps:
       - name: Stop old containers
