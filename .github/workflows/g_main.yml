@@ -14,14 +14,29 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+ 
+      - name: Generate image version 
+        id: version 
+        run: | 
+          echo "VERSION=$(date +'%Y%m%d-%H%M%S')" >> $GITHUB_ENV
 
       - name: Build backend image
         run: |
-          docker build -t mern-backend:latest ./backend
+          docker build \
+            -t mern-backend:latest \
+            -t mern-backend:${VERSION} \
+            ./backend
 
       - name: Build frontend image
         run: |
-          docker build -t mern-frontend:latest ./frontend
+          docker build \
+            -t mern-frontend:latest \
+            -t mern-frontend:${VERSION} \
+            ./frontend
+
+      - name: Show created version 
+        run: | 
+          echo "Created version: ${VERSION}"
 
       - name: Stop old containers
         run: |
@@ -33,4 +48,8 @@ jobs:
 
       - name: Show running containers
         run: docker ps
+
+      - name: Show Docker images 
+        run: | 
+          docker images | grep mern
 
