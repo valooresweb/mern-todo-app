@@ -6,6 +6,7 @@ on:
 
 env:
   APP_DIR: /home/gaelle/g_app/todo-app
+  BACKUP_DIR: /home/gaelle/g_app/backups
 
 jobs:
   deploy:
@@ -14,34 +15,53 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
- 
-      - name: Generate image version 
-        id: version 
-        run: | 
+
+      - name: Generate image version
+        run: |
           echo "VERSION=$(date +'%Y%m%d-%H%M%S')" >> $GITHUB_ENV
 
-      - name: Build backend image
+      # Create backup folders
+      - name: Create backup directory
         run: |
-          docker build \
-            -t mern-backend:latest \
-            -t mern-backend:${VERSION} \
-            ./backend
+          mkdir -p $BACKUP_DIR/versions/$VERSION/backend
+          mkdir -p $BACKUP_DIR/versions/$VERSION/frontend
 
-      - name: Build frontend image
+      # Save previous latest images
+      - name: Backup current images
         run: |
-          docker build \
-            -t mern-frontend:latest \
-            -t mern-frontend:${VERSION} \
-            ./frontend
+          if docker image inspect mern-backend:latest > /dev/null 2>&1; then
+            docker save \
+              -o $BACKUP_DIR/versions/$VERSION/backend/backend.tar \
+              mern-backend:latest
+          fi
 
-      - name: Show created version 
-        run: | 
-          echo "Created version: ${VERSION}"
+          if docker image inspect mern-frontend:latest > /dev/null 2>&1; then
+            docker save \
+              -o $BACKUP_DIR/versions/$VERSION/frontend/frontend.tar \
+              mern-frontend:latest
+          fi
 
+      # Stop old containers
       - name: Stop old containers
         run: |
           docker compose -f $APP_DIR/docker-compose.yml down || true
 
+      # Remove previous latest images
+      - name: Remove old latest images
+        run: |
+          docker rmi mern-backend:latest || true
+          docker rmi mern-frontend:latest || true
+
+      # Build new latest images
+      - name: Build backend image
+        run: |
+          docker build -t mern-backend:latest ./backend
+
+      - name: Build frontend image
+        run: |
+          docker build -t mern-frontend:latest ./frontend
+
+      # Deploy
       - name: Start containers
         run: |
           docker compose -f $APP_DIR/docker-compose.yml up -d
@@ -49,7 +69,7 @@ jobs:
       - name: Show running containers
         run: docker ps
 
-      - name: Show Docker images 
-        run: | 
-          docker images | grep mern
+      - name: Show backup folders
+        run: |
+          ls -R $BACKUP_DIR
 
