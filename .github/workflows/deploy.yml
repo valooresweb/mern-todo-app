@@ -16,16 +16,34 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: SonarQube Scan
+      # ======================
+      # FRONTEND SCAN
+      # ======================
+      - name: Sonar Frontend
         uses: SonarSource/sonarqube-scan-action@v6
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKENZEINA }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URLZEINA }}
         with:
           args: >
-            -Dsonar.projectKey=new-mern-project
-            -Dsonar.projectName="MERN App"
-            -Dsonar.sources=.
+            -Dsonar.projectKey=mern-frontend
+            -Dsonar.projectName=Frontend
+            -Dsonar.sources=frontend
+            -Dsonar.sourceEncoding=UTF-8
+
+      # ======================
+      # BACKEND SCAN
+      # ======================
+      - name: Sonar Backend
+        uses: SonarSource/sonarqube-scan-action@v6
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKENZEINABACKEND }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URLZEINABACKEND }}
+        with:
+          args: >
+            -Dsonar.projectKey=mern-backend
+            -Dsonar.projectName=Backend
+            -Dsonar.sources=backend
             -Dsonar.sourceEncoding=UTF-8
 
   # ======================
@@ -73,8 +91,6 @@ jobs:
     needs: [build, backup]
 
     steps:
-  
-
       - name: Restart containers
         run: |
           docker compose down
