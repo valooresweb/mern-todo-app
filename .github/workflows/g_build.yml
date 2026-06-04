@@ -1,5 +1,5 @@
 
-name: SonarQube Scan
+name: SonarQube Scan G
 
 on:
   workflow_dispatch:
