@@ -19,8 +19,8 @@ jobs:
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v4
         env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKENZeina }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URLZeina }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKENZEINA }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URLZEINA }}
 
   # ======================
   # 1. BUILD IMAGES
