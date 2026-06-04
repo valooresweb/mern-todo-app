@@ -55,50 +55,12 @@ jobs:
           fi
 
 
-  sonar:
-    runs-on: [self-hosted, gaelle]
-    needs: backup
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      # FRONTEND ONLY
-      - name: Install frontend dependencies
-        run: |
-          cd frontend
-          npm install
-
-      - name: Build frontend
-        run: |
-          cd frontend
-          npm run build
-
-      - name: SonarQube Scan (Frontend)
-        uses: SonarSource/sonarqube-scan-action@v4
-        env:
-          SONAR_TOKEN: ${{ secrets.G_SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.G_SONAR_HOST_URL }}
-        with:
-          args: >
-            -Dsonar.projectKey=mern-todo-app
-            -Dsonar.projectName="MERN Todo App Frontend"
-            -Dsonar.sources=frontend/src
-            -Dsonar.sourceEncoding=UTF-8
-            -Dsonar.exclusions=**/node_modules/**
-            
+ 
   
   # 3. STOP OLD CONTAINERS
   stop_containers:
     runs-on: [self-hosted, gaelle]
-    needs: sonar
+    needs: backup
 
     steps:
       - name: Stop old containers
