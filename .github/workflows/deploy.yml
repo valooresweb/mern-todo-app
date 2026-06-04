@@ -3,37 +3,31 @@ name: Deploy App
 on:
   workflow_dispatch:
 
-permissions:
-  contents: read
-  packages: write
-
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Login to GHCR
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+      - name: Build Docker image
+        run: docker build -t mern-todo-app:latest .
 
-      - name: Build image
+      - name: Save image to tar file
+        run: docker save mern-todo-app:latest -o app.tar
+
+      - name: Copy image to server
         run: |
-          docker build -t ghcr.io/${{ github.repository_owner }}/mern-todo-app:latest .
+          scp -o StrictHostKeyChecking=no app.tar user@YOUR_SERVER_IP:/tmp/app.tar
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: Push image
+      - name: Load image and deploy on server
         run: |
-          docker push ghcr.io/${{ github.repository_owner }}/mern-todo-app:latest
-
-  deploy:
-    needs: build
-    runs-on: r2
-
-    steps:
-      - name: Login to GHCR
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-
-      - name: Deploy
-        run: |
-          docker compose pull
-          docker compose up -d
+          ssh -o StrictHostKeyChecking=no user@YOUR_SERVER_IP << 'EOF'
+            docker load -i /tmp/app.tar
+            docker stop mern-app || true
+            docker rm mern-app || true
+            docker run -d --name mern-app -p 3000:3000 mern-todo-app:latest
+          EOF
