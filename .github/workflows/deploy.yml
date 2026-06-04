@@ -73,7 +73,7 @@ jobs:
     needs: [build, backup]
 
     steps:
-      - uses: actions/checkout@v4
+  
 
       - name: Restart containers
         run: |
