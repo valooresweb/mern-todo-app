@@ -40,8 +40,8 @@ jobs:
       - name: Sonar Backend Scan
         uses: SonarSource/sonarqube-scan-action@v6
         env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKENZEINABACKEND }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URLZEINABACKEND }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKENZEINABACKEND2 }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URLZEINABACKEND2 }}
         with:
           args: >
             -Dsonar.projectKey=mern-backend
