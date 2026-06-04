@@ -6,9 +6,9 @@ on:
 jobs:
 
   # ======================
-  # 0A. FRONTEND SONAR
+  # 0. SONARQUBE SCAN
   # ======================
-  sonar-frontend:
+  sonar:
     runs-on: r2
 
     steps:
@@ -16,6 +16,9 @@ jobs:
         with:
           fetch-depth: 0
 
+      # ======================
+      # FRONTEND SCAN (same project)
+      # ======================
       - name: Sonar Frontend
         uses: SonarSource/sonarqube-scan-action@v6
         env:
@@ -23,31 +26,23 @@ jobs:
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URLZEINA }}
         with:
           args: >
-            -Dsonar.projectKey=mern-frontend
-            -Dsonar.projectName=Frontend
+            -Dsonar.projectKey=MERN App Backend
+            -Dsonar.projectName="MERN App"
             -Dsonar.sources=frontend
             -Dsonar.sourceEncoding=UTF-8
 
-  # ======================
-  # 0B. BACKEND SONAR
-  # ======================
-  sonar-backend:
-    runs-on: r2
-
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
+      # ======================
+      # BACKEND SCAN (same project)
+      # ======================
       - name: Sonar Backend
         uses: SonarSource/sonarqube-scan-action@v6
         env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKENZEINABACKEND }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URLZEINABACKEND }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKENZEINA }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URLZEINA }}
         with:
           args: >
-            -Dsonar.projectKey=mern-backend
-            -Dsonar.projectName=Backend
+            -Dsonar.projectKey=MERN App Backend
+            -Dsonar.projectName="MERN App"
             -Dsonar.sources=backend
             -Dsonar.sourceEncoding=UTF-8
 
@@ -56,9 +51,7 @@ jobs:
   # ======================
   build:
     runs-on: r2
-    needs:
-      - sonar-frontend
-      - sonar-backend
+    needs: sonar
 
     steps:
       - uses: actions/checkout@v4
@@ -95,9 +88,7 @@ jobs:
   # ======================
   deploy:
     runs-on: r2
-    needs:
-      - build
-      - backup
+    needs: [build, backup]
 
     steps:
       - name: Restart containers
