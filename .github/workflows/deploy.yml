@@ -6,9 +6,9 @@ on:
 jobs:
 
   # ======================
-  # 0. SONARQUBE SCAN
+  # 0A. FRONTEND SONAR
   # ======================
-  sonar:
+  sonar-frontend:
     runs-on: r2
 
     steps:
@@ -16,9 +16,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      # ======================
-      # FRONTEND SCAN
-      # ======================
       - name: Sonar Frontend
         uses: SonarSource/sonarqube-scan-action@v6
         env:
@@ -31,9 +28,17 @@ jobs:
             -Dsonar.sources=frontend
             -Dsonar.sourceEncoding=UTF-8
 
-      # ======================
-      # BACKEND SCAN
-      # ======================
+  # ======================
+  # 0B. BACKEND SONAR
+  # ======================
+  sonar-backend:
+    runs-on: r2
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Sonar Backend
         uses: SonarSource/sonarqube-scan-action@v6
         env:
@@ -51,7 +56,9 @@ jobs:
   # ======================
   build:
     runs-on: r2
-    needs: sonar
+    needs:
+      - sonar-frontend
+      - sonar-backend
 
     steps:
       - uses: actions/checkout@v4
@@ -88,7 +95,9 @@ jobs:
   # ======================
   deploy:
     runs-on: r2
-    needs: [build, backup]
+    needs:
+      - build
+      - backup
 
     steps:
       - name: Restart containers
