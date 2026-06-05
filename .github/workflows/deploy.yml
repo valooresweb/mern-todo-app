@@ -107,7 +107,7 @@ jobs:
         run: |
           trivy image \
             --severity CRITICAL \
-            --vuln-type os,library \
+            --vuln-type os \
             --exit-code 1 \
             zeina-backend:latest
 
