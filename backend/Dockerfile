@@ -18,7 +18,7 @@ RUN chown -R appuser:appgroup /app
 # Switch to non-root user
 USER appuser
 
-EXPOSE 5000
+EXPOSE 8000
 
 # Healthcheck (IMPORTANT for Trivy)
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
