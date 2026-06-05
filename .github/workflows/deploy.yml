@@ -64,7 +64,7 @@ jobs:
         run: docker build -t zeina-frontend:latest -f frontend/Dockerfile frontend
 
   # ======================
-  # TRIVY SECURITY SCAN (FIXED)
+  # TRIVY SECURITY SCAN (CLEAN STRUCTURE)
   # ======================
   trivy:
     runs-on: r2
@@ -73,26 +73,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # ✅ SAFE INSTALL METHOD (NO sudo, NO apt, NO .deb)
+      # ======================
+      # INSTALL TRIVY
+      # ======================
       - name: Install Trivy
         run: |
           curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b $HOME/.local/bin
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
+      # ======================
+      # VERIFY TRIVY
+      # ======================
       - name: Verify Trivy
         run: trivy --version
 
       # ======================
-      # SCAN DOCKERFILES
-      # ======================
-      - name: Scan Backend Dockerfile
-        run: trivy config backend/
-
-      - name: Scan Frontend Dockerfile
-        run: trivy config frontend/
-
-      # ======================
-      # SCAN IMAGES
+      # SCAN BACKEND IMAGE
       # ======================
       - name: Scan Backend Image
         run: |
@@ -101,6 +97,9 @@ jobs:
             --exit-code 1 \
             zeina-backend:latest
 
+      # ======================
+      # SCAN FRONTEND IMAGE
+      # ======================
       - name: Scan Frontend Image
         run: |
           trivy image \
@@ -109,13 +108,16 @@ jobs:
             zeina-frontend:latest
 
       # ======================
-      # REPORTS (OPTIONAL BUT USEFUL)
+      # GENERATE REPORTS
       # ======================
       - name: Generate Reports
         run: |
           trivy image -f json -o backend-report.json zeina-backend:latest
           trivy image -f json -o frontend-report.json zeina-frontend:latest
 
+      # ======================
+      # UPLOAD REPORTS
+      # ======================
       - name: Upload Reports
         uses: actions/upload-artifact@v4
         with:
