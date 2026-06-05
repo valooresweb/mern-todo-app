@@ -6,7 +6,7 @@ on:
 jobs:
 
   # ======================
-  # FRONTEND SONAR (RUNS IN PARALLEL)
+  # FRONTEND SONAR
   # ======================
   sonar-frontend:
     runs-on: r2
@@ -27,7 +27,7 @@ jobs:
             -Dsonar.sources=frontend
 
   # ======================
-  # BACKEND SONAR (RUNS IN PARALLEL)
+  # BACKEND SONAR
   # ======================
   sonar-backend:
     runs-on: r2
@@ -48,7 +48,7 @@ jobs:
             -Dsonar.sources=backend
 
   # ======================
-  # BUILD (WAIT FOR BOTH SONAR JOBS)
+  # BUILD
   # ======================
   build:
     runs-on: r2
@@ -64,11 +64,78 @@ jobs:
         run: docker build -t zeina-frontend:latest -f frontend/Dockerfile frontend
 
   # ======================
+  # TRIVY SECURITY SCAN
+  # ======================
+  trivy:
+    runs-on: r2
+    needs: build
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Trivy
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget
+
+          wget https://github.com/aquasecurity/trivy/releases/latest/download/trivy_0.65.0_Linux-64bit.deb
+
+          sudo dpkg -i trivy_0.65.0_Linux-64bit.deb
+
+      - name: Verify Trivy
+        run: trivy --version
+
+      # Scan Docker configurations
+      - name: Scan Backend Dockerfile
+        run: trivy config backend/
+
+      - name: Scan Frontend Dockerfile
+        run: trivy config frontend/
+
+      # Scan built images
+      - name: Scan Backend Image
+        run: |
+          trivy image \
+            --severity HIGH,CRITICAL \
+            --exit-code 1 \
+            zeina-backend:latest
+
+      - name: Scan Frontend Image
+        run: |
+          trivy image \
+            --severity HIGH,CRITICAL \
+            --exit-code 1 \
+            zeina-frontend:latest
+
+      # Generate reports
+      - name: Generate Backend Report
+        run: |
+          trivy image \
+            -f json \
+            -o backend-report.json \
+            zeina-backend:latest
+
+      - name: Generate Frontend Report
+        run: |
+          trivy image \
+            -f json \
+            -o frontend-report.json \
+            zeina-frontend:latest
+
+      - name: Upload Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-security-reports
+          path: |
+            backend-report.json
+            frontend-report.json
+
+  # ======================
   # BACKUP
   # ======================
   backup:
     runs-on: r2
-    needs: build
+    needs: [build, trivy]
     if: always()
 
     steps:
@@ -89,7 +156,7 @@ jobs:
   # ======================
   deploy:
     runs-on: r2
-    needs: [build, backup]
+    needs: [build, backup, trivy]
 
     steps:
       - name: Restart containers
