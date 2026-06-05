@@ -64,32 +64,39 @@ jobs:
         run: docker build -t zeina-frontend:latest -f frontend/Dockerfile frontend
 
   # ======================
-  # TRIVY SECURITY SCAN (CLEAN STRUCTURE)
+  # TRIVY SETUP (INSTALL + VERIFY ONCE)
   # ======================
-  trivy:
+  trivy-setup:
     runs-on: r2
     needs: build
 
     steps:
       - uses: actions/checkout@v4
 
-      # ======================
-      # INSTALL TRIVY
-      # ======================
       - name: Install Trivy
         run: |
           curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b $HOME/.local/bin
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      # ======================
-      # VERIFY TRIVY
-      # ======================
       - name: Verify Trivy
         run: trivy --version
 
-      # ======================
-      # SCAN BACKEND IMAGE
-      # ======================
+  # ======================
+  # BACKEND SCAN (PARALLEL JOB)
+  # ======================
+  trivy-backend:
+    runs-on: r2
+    needs: trivy-setup
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # install again (required because fresh runner)
+      - name: Install Trivy
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b $HOME/.local/bin
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
       - name: Scan Backend Image
         run: |
           trivy image \
@@ -97,9 +104,32 @@ jobs:
             --exit-code 1 \
             zeina-backend:latest
 
-      # ======================
-      # SCAN FRONTEND IMAGE
-      # ======================
+      - name: Generate Backend Report
+        run: |
+          trivy image -f json -o backend-report.json zeina-backend:latest
+
+      - name: Upload Backend Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-trivy-report
+          path: backend-report.json
+
+  # ======================
+  # FRONTEND SCAN (PARALLEL JOB)
+  # ======================
+  trivy-frontend:
+    runs-on: r2
+    needs: trivy-setup
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # install again (required because fresh runner)
+      - name: Install Trivy
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b $HOME/.local/bin
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
       - name: Scan Frontend Image
         run: |
           trivy image \
@@ -107,31 +137,22 @@ jobs:
             --exit-code 1 \
             zeina-frontend:latest
 
-      # ======================
-      # GENERATE REPORTS
-      # ======================
-      - name: Generate Reports
+      - name: Generate Frontend Report
         run: |
-          trivy image -f json -o backend-report.json zeina-backend:latest
           trivy image -f json -o frontend-report.json zeina-frontend:latest
 
-      # ======================
-      # UPLOAD REPORTS
-      # ======================
-      - name: Upload Reports
+      - name: Upload Frontend Report
         uses: actions/upload-artifact@v4
         with:
-          name: trivy-security-reports
-          path: |
-            backend-report.json
-            frontend-report.json
+          name: frontend-trivy-report
+          path: frontend-report.json
 
   # ======================
   # BACKUP
   # ======================
   backup:
     runs-on: r2
-    needs: [build, trivy]
+    needs: [build, trivy-backend, trivy-frontend]
     if: always()
 
     steps:
@@ -151,7 +172,7 @@ jobs:
   # ======================
   deploy:
     runs-on: r2
-    needs: [build, backup, trivy]
+    needs: [build, backup, trivy-backend, trivy-frontend]
 
     steps:
       - name: Restart containers
