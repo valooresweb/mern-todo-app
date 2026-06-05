@@ -48,7 +48,7 @@ jobs:
             -Dsonar.sources=backend
 
   # ======================
-  # BUILD
+  # BUILD DOCKER IMAGES
   # ======================
   build:
     runs-on: r2
@@ -57,14 +57,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build backend
+      - name: Build backend image
         run: docker build -t zeina-backend:latest -f backend/Dockerfile backend
 
-      - name: Build frontend
+      - name: Build frontend image
         run: docker build -t zeina-frontend:latest -f frontend/Dockerfile frontend
 
   # ======================
-  # TRIVY SECURITY SCAN
+  # TRIVY (NO SUDO VERSION)
   # ======================
   trivy:
     runs-on: r2
@@ -73,26 +73,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Trivy
+      # Install Trivy WITHOUT sudo (safe for restricted runners)
+      - name: Install Trivy (no sudo)
         run: |
-          sudo apt-get update
-          sudo apt-get install -y wget
-
           wget https://github.com/aquasecurity/trivy/releases/latest/download/trivy_0.65.0_Linux-64bit.deb
-
-          sudo dpkg -i trivy_0.65.0_Linux-64bit.deb
+          dpkg -x trivy_0.65.0_Linux-64bit.deb $HOME/trivy
+          echo "$HOME/trivy/usr/local/bin" >> $GITHUB_PATH
 
       - name: Verify Trivy
         run: trivy --version
 
-      # Scan Docker configurations
+      # Scan Dockerfiles (config scan)
       - name: Scan Backend Dockerfile
         run: trivy config backend/
 
       - name: Scan Frontend Dockerfile
         run: trivy config frontend/
 
-      # Scan built images
+      # Scan images (security scan)
       - name: Scan Backend Image
         run: |
           trivy image \
@@ -107,16 +105,14 @@ jobs:
             --exit-code 1 \
             zeina-frontend:latest
 
-      # Generate reports
-      - name: Generate Backend Report
+      # Generate reports (optional)
+      - name: Generate Reports
         run: |
           trivy image \
             -f json \
             -o backend-report.json \
             zeina-backend:latest
 
-      - name: Generate Frontend Report
-        run: |
           trivy image \
             -f json \
             -o frontend-report.json \
@@ -165,4 +161,4 @@ jobs:
           docker compose up -d
 
       - name: Show containers
-        run: docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Status}}"
+        run: docker ps --format "table {{.Names}}\t{{.Images}}\t{{.Status}}"
