@@ -179,5 +179,3 @@ jobs:
           docker compose down
           docker compose up -d
 
-      - name: Show Containers
-        run: docker ps --format "table {{.Names}}\t{{.Images}}\t{{.Status}}"
