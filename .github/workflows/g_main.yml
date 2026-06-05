@@ -142,7 +142,8 @@ jobs:
 
       - name: Build frontend image
         run: |
-          docker build -t mern-frontend:latest ./frontend
+          docker build \ --build-arg REACT_APP_BACKEND_URL=http://172.31.13.167:8000 \
+          -t mern-frontend:latest ./frontend
 
 
 
