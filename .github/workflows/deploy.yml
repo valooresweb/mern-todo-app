@@ -64,15 +64,16 @@ jobs:
         run: docker build -t zeina-frontend:latest -f frontend/Dockerfile frontend
 
   # ======================
-  # TRIVY SETUP (INSTALL + VERIFY ONCE)
+  # BACKEND SECURITY SCAN
   # ======================
-  trivy-setup:
+  trivy-backend:
     runs-on: r2
     needs: build
 
     steps:
       - uses: actions/checkout@v4
 
+      # Install Trivy (local to this job)
       - name: Install Trivy
         run: |
           curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b $HOME/.local/bin
@@ -80,22 +81,6 @@ jobs:
 
       - name: Verify Trivy
         run: trivy --version
-
-  # ======================
-  # BACKEND SCAN (PARALLEL JOB)
-  # ======================
-  trivy-backend:
-    runs-on: r2
-    needs: trivy-setup
-
-    steps:
-      - uses: actions/checkout@v4
-
-      # install again (required because fresh runner)
-      - name: Install Trivy
-        run: |
-          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b $HOME/.local/bin
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Scan Backend Image
         run: |
@@ -115,20 +100,23 @@ jobs:
           path: backend-report.json
 
   # ======================
-  # FRONTEND SCAN (PARALLEL JOB)
+  # FRONTEND SECURITY SCAN
   # ======================
   trivy-frontend:
     runs-on: r2
-    needs: trivy-setup
+    needs: build
 
     steps:
       - uses: actions/checkout@v4
 
-      # install again (required because fresh runner)
+      # Install Trivy (local to this job)
       - name: Install Trivy
         run: |
           curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b $HOME/.local/bin
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Verify Trivy
+        run: trivy --version
 
       - name: Scan Frontend Image
         run: |
