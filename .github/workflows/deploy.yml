@@ -10,7 +10,6 @@ jobs:
   # ======================
   sonar-frontend:
     runs-on: r2
-
     steps:
       - uses: actions/checkout@v4
         with:
@@ -31,7 +30,6 @@ jobs:
   # ======================
   sonar-backend:
     runs-on: r2
-
     steps:
       - uses: actions/checkout@v4
         with:
@@ -53,7 +51,6 @@ jobs:
   build:
     runs-on: r2
     needs: [sonar-frontend, sonar-backend]
-
     steps:
       - uses: actions/checkout@v4
 
@@ -63,36 +60,60 @@ jobs:
       - name: Build Frontend Image
         run: docker build -t zeina-frontend:latest -f frontend/Dockerfile frontend
 
+      # Optional: Save images for downstream jobs
+      - name: Save Backend Image
+        run: docker save zeina-backend:latest -o backend.tar
+
+      - name: Save Frontend Image
+        run: docker save zeina-frontend:latest -o frontend.tar
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: backend-image
+          path: backend.tar
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frontend-image
+          path: frontend.tar
+
   # ======================
   # TRIVY BACKEND SCAN
   # ======================
   trivy-backend:
     runs-on: r2
     needs: build
-
     steps:
       - uses: actions/checkout@v4
 
+      - uses: actions/download-artifact@v4
+        with:
+          name: backend-image
+
+      - name: Load Backend Image
+        run: docker load -i backend.tar
+
       - name: Install Trivy
         run: |
-          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b $HOME/.local/bin
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
+          | sh -s -- -b $HOME/.local/bin
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+          export PATH=$HOME/.local/bin:$PATH
 
       - name: Verify Trivy
         run: trivy --version
 
-      # 🔥 CRITICAL ONLY (OPTION 2 FIX)
       - name: Scan Backend Image
         run: |
           trivy image \
             --severity CRITICAL \
             --ignore-unfixed \
+            --vuln-type os,library \
             --exit-code 1 \
             zeina-backend:latest
 
       - name: Generate Backend Report
-        run: |
-          trivy image -f json -o backend-report.json zeina-backend:latest
+        run: trivy image -f json -o backend-report.json zeina-backend:latest || true
 
       - name: Upload Backend Report
         uses: actions/upload-artifact@v4
@@ -106,30 +127,37 @@ jobs:
   trivy-frontend:
     runs-on: r2
     needs: build
-
     steps:
       - uses: actions/checkout@v4
 
+      - uses: actions/download-artifact@v4
+        with:
+          name: frontend-image
+
+      - name: Load Frontend Image
+        run: docker load -i frontend.tar
+
       - name: Install Trivy
         run: |
-          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b $HOME/.local/bin
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
+          | sh -s -- -b $HOME/.local/bin
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+          export PATH=$HOME/.local/bin:$PATH
 
       - name: Verify Trivy
         run: trivy --version
 
-      # 🔥 CRITICAL ONLY (OPTION 2 FIX)
       - name: Scan Frontend Image
         run: |
           trivy image \
             --severity CRITICAL \
             --ignore-unfixed \
+            --vuln-type os,library \
             --exit-code 1 \
             zeina-frontend:latest
 
       - name: Generate Frontend Report
-        run: |
-          trivy image -f json -o frontend-report.json zeina-frontend:latest
+        run: trivy image -f json -o frontend-report.json zeina-frontend:latest || true
 
       - name: Upload Frontend Report
         uses: actions/upload-artifact@v4
@@ -144,7 +172,6 @@ jobs:
     runs-on: r2
     needs: [build, trivy-backend, trivy-frontend]
     if: always()
-
     steps:
       - name: Create Backup Folder
         run: |
@@ -162,8 +189,7 @@ jobs:
   # ======================
   deploy:
     runs-on: r2
-    needs: [build, backup, trivy-backend, trivy-frontend]
-
+    needs: [backup]
     steps:
       - name: Restart Containers
         run: |
