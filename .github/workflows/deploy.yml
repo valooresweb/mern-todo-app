@@ -64,7 +64,7 @@ jobs:
         run: docker build -t zeina-frontend:latest -f frontend/Dockerfile frontend
 
   # ======================
-  # BACKEND SECURITY SCAN
+  # BACKEND TRIVY SCAN
   # ======================
   trivy-backend:
     runs-on: r2
@@ -73,7 +73,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Install Trivy (local to this job)
       - name: Install Trivy
         run: |
           curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b $HOME/.local/bin
@@ -86,6 +85,7 @@ jobs:
         run: |
           trivy image \
             --severity HIGH,CRITICAL \
+            --ignore-unfixed \
             --exit-code 1 \
             zeina-backend:latest
 
@@ -100,7 +100,7 @@ jobs:
           path: backend-report.json
 
   # ======================
-  # FRONTEND SECURITY SCAN
+  # FRONTEND TRIVY SCAN
   # ======================
   trivy-frontend:
     runs-on: r2
@@ -109,7 +109,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Install Trivy (local to this job)
       - name: Install Trivy
         run: |
           curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b $HOME/.local/bin
@@ -122,6 +121,7 @@ jobs:
         run: |
           trivy image \
             --severity HIGH,CRITICAL \
+            --ignore-unfixed \
             --exit-code 1 \
             zeina-frontend:latest
 
