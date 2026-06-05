@@ -144,10 +144,67 @@ jobs:
         run: |
           docker build -t mern-frontend:latest ./frontend
 
-  # 7. DEPLOY
-  deploy:
+
+
+  # 7. TRIVY SECURITY SCAN
+  
+  trivy_scan:
     runs-on: [self-hosted, gaelle]
     needs: [build_backend, build_frontend]
+  
+    steps:
+      
+    # Pull Trivy image if not already present
+    - name: Ensure Trivy Docker Image Exists
+      run: |
+        docker pull aquasec/trivy:latest
+    
+    # BACKEND SECURITY SCAN
+    
+    - name: Backend - Warning for HIGH Vulnerabilities
+      run: |
+        docker run --rm \
+          -v /var/run/docker.sock:/var/run/docker.sock \
+          aquasec/trivy:latest image \
+          --severity HIGH \
+          --exit-code 0 \
+          mern-backend:latest
+    
+    - name: Backend - Fail on CRITICAL Vulnerabilities
+      run: |
+        docker run --rm \
+          -v /var/run/docker.sock:/var/run/docker.sock \
+          aquasec/trivy:latest image \
+          --severity CRITICAL \
+          --exit-code 1 \
+          mern-backend:latest
+    
+    # FRONTEND SECURITY SCAN
+    
+    - name: Frontend - Warning for HIGH Vulnerabilities
+      run: |
+        docker run --rm \
+          -v /var/run/docker.sock:/var/run/docker.sock \
+          aquasec/trivy:latest image \
+          --severity HIGH \
+          --exit-code 0 \
+          mern-frontend:latest
+    
+    - name: Frontend - Fail on CRITICAL Vulnerabilities
+      run: |
+        docker run --rm \
+          -v /var/run/docker.sock:/var/run/docker.sock \
+          aquasec/trivy:latest image \
+          --severity CRITICAL \
+          --exit-code 1 \
+          mern-frontend:latest
+    
+
+
+  # 8. DEPLOY
+  deploy:
+    runs-on: [self-hosted, gaelle]
+    needs: trivy_scan
 
     steps:
       - name: Start containers
@@ -155,7 +212,7 @@ jobs:
           docker compose -f $APP_DIR/docker-compose.yml up -d
 
 
-  # 8. VERIFY
+  # 9. VERIFY
   verify:
     runs-on: [self-hosted, gaelle]
     needs: deploy
