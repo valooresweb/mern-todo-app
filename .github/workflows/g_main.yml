@@ -135,18 +135,16 @@ jobs:
   build_frontend:
     runs-on: [self-hosted, gaelle]
     needs: remove_old_images
-
+  
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
+  
       - name: Build frontend image
         run: |
-          docker build \ --build-arg REACT_APP_BACKEND_URL=http://172.31.13.167:8000 \
-          -t mern-frontend:latest ./frontend
-
-
-
+          docker build \
+            --build-arg REACT_APP_BACKEND_URL=http://172.31.13.167:8000 \
+            -t mern-frontend:latest ./frontend
 
 
   # 7. TRIVY SECURITY SCAN
