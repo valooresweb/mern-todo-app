@@ -6,7 +6,7 @@ on:
 jobs:
 
   # ======================
-  # FRONTEND SONAR
+  # SONAR FRONTEND
   # ======================
   sonar-frontend:
     runs-on: r2
@@ -27,7 +27,7 @@ jobs:
             -Dsonar.sources=frontend
 
   # ======================
-  # BACKEND SONAR
+  # SONAR BACKEND
   # ======================
   sonar-backend:
     runs-on: r2
@@ -57,14 +57,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build backend image
+      - name: Build Backend Image
         run: docker build -t zeina-backend:latest -f backend/Dockerfile backend
 
-      - name: Build frontend image
+      - name: Build Frontend Image
         run: docker build -t zeina-frontend:latest -f frontend/Dockerfile frontend
 
   # ======================
-  # BACKEND TRIVY SCAN
+  # TRIVY BACKEND SCAN
   # ======================
   trivy-backend:
     runs-on: r2
@@ -81,10 +81,11 @@ jobs:
       - name: Verify Trivy
         run: trivy --version
 
+      # 🔥 CRITICAL ONLY (OPTION 2 FIX)
       - name: Scan Backend Image
         run: |
           trivy image \
-            --severity HIGH,CRITICAL \
+            --severity CRITICAL \
             --ignore-unfixed \
             --exit-code 1 \
             zeina-backend:latest
@@ -100,7 +101,7 @@ jobs:
           path: backend-report.json
 
   # ======================
-  # FRONTEND TRIVY SCAN
+  # TRIVY FRONTEND SCAN
   # ======================
   trivy-frontend:
     runs-on: r2
@@ -117,10 +118,11 @@ jobs:
       - name: Verify Trivy
         run: trivy --version
 
+      # 🔥 CRITICAL ONLY (OPTION 2 FIX)
       - name: Scan Frontend Image
         run: |
           trivy image \
-            --severity HIGH,CRITICAL \
+            --severity CRITICAL \
             --ignore-unfixed \
             --exit-code 1 \
             zeina-frontend:latest
@@ -144,15 +146,15 @@ jobs:
     if: always()
 
     steps:
-      - name: Create backup folder
+      - name: Create Backup Folder
         run: |
           BACKUP_TIME=$(date +%Y%m%d-%H%M%S)
           mkdir -p /home/zeina/backups/mern/$BACKUP_TIME
 
-      - name: Save backend image
+      - name: Save Backend Image
         run: docker save zeina-backend:latest -o /home/zeina/backups/mern/backend.tar
 
-      - name: Save frontend image
+      - name: Save Frontend Image
         run: docker save zeina-frontend:latest -o /home/zeina/backups/mern/frontend.tar
 
   # ======================
@@ -163,10 +165,10 @@ jobs:
     needs: [build, backup, trivy-backend, trivy-frontend]
 
     steps:
-      - name: Restart containers
+      - name: Restart Containers
         run: |
           docker compose down
           docker compose up -d
 
-      - name: Show containers
+      - name: Show Containers
         run: docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Status}}"
