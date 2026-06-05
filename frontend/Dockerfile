@@ -16,7 +16,7 @@ RUN npm run build
 # ======================
 # STAGE 2: PRODUCTION (NGINX)
 # ======================
-FROM nginx:1.27-alpine
+FROM nginx:1.27.3-alpine
 
 # remove default nginx config
 RUN rm -rf /etc/nginx/conf.d/default.conf
