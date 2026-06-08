@@ -56,12 +56,13 @@ jobs:
       - name: Load Backend Image
         run: docker load -i backend.tar
 
-      - name: Run Trivy (Docker Image)
+      - name: Run Trivy (Backend)
         run: |
           docker run --rm \
             -v /var/run/docker.sock:/var/run/docker.sock \
             aquasec/trivy:latest image \
             --severity CRITICAL \
+            --vuln-type os,library \
             --exit-code 1 \
             zeina-backend:latest
 
@@ -82,12 +83,13 @@ jobs:
       - name: Load Frontend Image
         run: docker load -i frontend.tar
 
-      - name: Run Trivy (Docker Image)
+      - name: Run Trivy (Frontend)
         run: |
           docker run --rm \
             -v /var/run/docker.sock:/var/run/docker.sock \
             aquasec/trivy:latest image \
             --severity CRITICAL \
+            --vuln-type os,library \
             --exit-code 1 \
             zeina-frontend:latest
 
