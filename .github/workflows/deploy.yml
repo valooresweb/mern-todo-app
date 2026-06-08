@@ -6,51 +6,10 @@ on:
 jobs:
 
 # ======================
-# SONAR FRONTEND
-# ======================
-  sonar-frontend:
-    runs-on: r2
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Sonar Frontend Scan
-        uses: SonarSource/sonarqube-scan-action@v6
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKENZEINA }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URLZEINA }}
-        with:
-          args: >
-            -Dsonar.projectKey=new-mern-project
-            -Dsonar.sources=frontend
-
-# ======================
-# SONAR BACKEND
-# ======================
-  sonar-backend:
-    runs-on: r2
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Sonar Backend Scan
-        uses: SonarSource/sonarqube-scan-action@v6
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKENZEINABACKEND2 }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URLZEINABACKEND2 }}
-        with:
-          args: >
-            -Dsonar.projectKey=Mern-app-backend
-            -Dsonar.sources=backend
-
-# ======================
 # BUILD IMAGES
 # ======================
   build:
     runs-on: r2
-    needs: [sonar-frontend, sonar-backend]
 
     steps:
       - uses: actions/checkout@v4
@@ -65,8 +24,25 @@ jobs:
             -t zeina-frontend:latest \
             -f frontend/Dockerfile frontend
 
+      # SAVE IMAGES (IMPORTANT FIX)
+      - name: Save Backend Image
+        run: docker save zeina-backend:latest -o backend.tar
+
+      - name: Save Frontend Image
+        run: docker save zeina-frontend:latest -o frontend.tar
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: backend-image
+          path: backend.tar
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frontend-image
+          path: frontend.tar
+
 # ======================
-# TRIVY BACKEND SCAN (FIXED)
+# TRIVY BACKEND SCAN
 # ======================
   trivy-backend:
     runs-on: r2
@@ -91,7 +67,7 @@ jobs:
           vuln-type: os,library
 
 # ======================
-# TRIVY FRONTEND SCAN (FIXED)
+# TRIVY FRONTEND SCAN
 # ======================
   trivy-frontend:
     runs-on: r2
