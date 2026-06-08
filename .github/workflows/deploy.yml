@@ -1,13 +1,13 @@
-name: Deploy App
+my existing worflow:name: Deploy App
 
 on:
   workflow_dispatch:
 
 jobs:
 
-# ======================
-# SONAR FRONTEND
-# ======================
+  # ======================
+  # SONAR FRONTEND
+  # ======================
   sonar-frontend:
     runs-on: r2
     steps:
@@ -25,9 +25,10 @@ jobs:
             -Dsonar.projectKey=new-mern-project
             -Dsonar.sources=frontend
 
-# ======================
-# SONAR BACKEND
-# ======================
+
+  # ======================
+  # SONAR BACKEND
+  # ======================
   sonar-backend:
     runs-on: r2
     steps:
@@ -45,9 +46,10 @@ jobs:
             -Dsonar.projectKey=Mern-app-backend
             -Dsonar.sources=backend
 
-# ======================
-# BUILD IMAGES
-# ======================
+
+  # ======================
+  # BUILD IMAGES
+  # ======================
   build:
     runs-on: r2
     needs: [sonar-frontend, sonar-backend]
@@ -57,13 +59,16 @@ jobs:
       - name: Build Backend Image
         run: docker build -t zeina-backend:latest -f backend/Dockerfile backend
 
-      - name: Build Frontend Image (NO CACHE FIX)
+      # ✅ FIXED FRONTEND BUILD (THIS IS WHAT YOU WERE MISSING)
+      - name: Build Frontend Image
         run: |
-          docker build --no-cache \
+          docker build \
             --build-arg REACT_APP_BACKEND_URL=http://172.31.13.167:8002/api \
             -t zeina-frontend:latest \
             -f frontend/Dockerfile frontend
 
+
+      # Save images
       - name: Save Backend Image
         run: docker save zeina-backend:latest -o backend.tar
 
@@ -80,9 +85,10 @@ jobs:
           name: frontend-image
           path: frontend.tar
 
-# ======================
-# TRIVY SCANS
-# ======================
+
+  # ======================
+  # TRIVY BACKEND SCAN
+  # ======================
   trivy-backend:
     runs-on: r2
     needs: build
@@ -93,15 +99,27 @@ jobs:
         with:
           name: backend-image
 
-      - run: docker load -i backend.tar
+      - name: Load Backend Image
+        run: docker load -i backend.tar
 
-      - run: |
-          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b $HOME/.local/bin
+      - name: Install Trivy
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
+          | sh -s -- -b $HOME/.local/bin
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      - run: |
-          trivy image --severity CRITICAL --vuln-type os --exit-code 1 zeina-backend:latest
+      - name: Scan Backend Image
+        run: |
+          trivy image \
+            --severity CRITICAL \
+            --vuln-type os \
+            --exit-code 1 \
+            zeina-backend:latest
 
+
+  # ======================
+  # TRIVY FRONTEND SCAN
+  # ======================
   trivy-frontend:
     runs-on: r2
     needs: build
@@ -112,38 +130,51 @@ jobs:
         with:
           name: frontend-image
 
-      - run: docker load -i frontend.tar
+      - name: Load Frontend Image
+        run: docker load -i frontend.tar
 
-      - run: |
-          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b $HOME/.local/bin
+      - name: Install Trivy
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
+          | sh -s -- -b $HOME/.local/bin
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      - run: |
-          trivy image --severity CRITICAL --vuln-type os,library --exit-code 1 zeina-frontend:latest
+      - name: Scan Frontend Image
+        run: |
+          trivy image \
+            --severity CRITICAL \
+            --vuln-type os,library \
+            --exit-code 1 \
+            zeina-frontend:latest
 
-# ======================
-# BACKUP
-# ======================
+
+  # ======================
+  # BACKUP
+  # ======================
   backup:
     runs-on: r2
     needs: [build, trivy-backend, trivy-frontend]
     if: always()
     steps:
-      - run: |
-          mkdir -p /home/zeina/backups/mern/$(date +%Y%m%d-%H%M%S)
+      - name: Create Backup Folder
+        run: |
+          BACKUP_TIME=$(date +%Y%m%d-%H%M%S)
+          mkdir -p /home/zeina/backups/mern/$BACKUP_TIME
 
-      - run: |
+      - name: Save Images
+        run: |
           docker save zeina-backend:latest -o /home/zeina/backups/mern/backend.tar
           docker save zeina-frontend:latest -o /home/zeina/backups/mern/frontend.tar
 
-# ======================
-# DEPLOY
-# ======================
+
+  # ======================
+  # DEPLOY
+  # ======================
   deploy:
     runs-on: r2
     needs: [backup]
     steps:
-      - name: Deploy containers
+      - name: Restart Containers
         run: |
           docker compose down
-          docker compose up -d --force-recreate
+          docker compose up -d
