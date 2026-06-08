@@ -210,7 +210,7 @@ jobs:
   # 9. OWASP ZAP SECURITY SCAN
   owasp_zap:
     runs-on: [self-hosted, gaelle]
-    needs: deploy
+    needs: [deploy, prepare]
   
     steps:
       - name: Create ZAP versioned report directory
