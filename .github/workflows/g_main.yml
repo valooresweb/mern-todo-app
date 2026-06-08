@@ -217,6 +217,7 @@ jobs:
         run: |
           ZAP_DIR=$BACKUP_DIR/versions/${{ needs.prepare.outputs.version }}/zap
           mkdir -p $ZAP_DIR
+          chmod -R 777 $ZAP_DIR
           echo "ZAP_DIR=$ZAP_DIR" >> $GITHUB_ENV
   
       - name: Pull OWASP ZAP image
@@ -229,18 +230,22 @@ jobs:
             -v $ZAP_DIR:/zap/wrk \
             ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
             -t http://172.31.13.167:3000 \
-            -r /zap/wrk/frontend-report.html \
-            -x /zap/wrk/frontend-report.xml \
+            -r frontend-report.html \
+            -x frontend-report.xml \
+            -J frontend-report.json \
+            -w frontend-warnings.md \
             -I || true
-      
+  
       - name: Run OWASP ZAP Backend Scan
         run: |
           docker run --rm \
             -v $ZAP_DIR:/zap/wrk \
             ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
             -t http://172.31.13.167:8000 \
-            -r /zap/wrk/backend-report.html \
-            -x /zap/wrk/backend-report.xml \
+            -r backend-report.html \
+            -x backend-report.xml \
+            -J backend-report.json \
+            -w backend-warnings.md \
             -I || true
   
       - name: Show ZAP report location
