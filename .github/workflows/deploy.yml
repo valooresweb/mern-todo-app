@@ -25,18 +25,17 @@ jobs:
             -f frontend/Dockerfile frontend
 
 # ======================
-# TRIVY BACKEND SCAN (FIXED)
+# TRIVY BACKEND SCAN
 # ======================
   trivy-backend:
     runs-on: r2
     needs: build
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Trivy Backend Scan
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@0.24.0
         with:
           image-ref: zeina-backend:latest
           severity: CRITICAL
@@ -44,18 +43,17 @@ jobs:
           vuln-type: os,library
 
 # ======================
-# TRIVY FRONTEND SCAN (FIXED)
+# TRIVY FRONTEND SCAN
 # ======================
   trivy-frontend:
     runs-on: r2
     needs: build
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Trivy Frontend Scan
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@0.24.0
         with:
           image-ref: zeina-frontend:latest
           severity: CRITICAL
