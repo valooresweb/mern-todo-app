@@ -52,30 +52,32 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download Backend Artifact
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
           name: backend-image
-
-      - name: Debug files
-        run: ls -lah
 
       - name: Load Backend Image
         run: docker load -i backend.tar
 
       - name: Run Trivy Backend Report
         run: |
-          mkdir -p reports
+          mkdir -p trivy-reports
 
           docker run --rm \
             -v /var/run/docker.sock:/var/run/docker.sock \
-            -v $PWD/reports:/reports \
+            -v $PWD/trivy-reports:/reports \
             aquasec/trivy:latest image \
             --severity HIGH,CRITICAL \
             --ignore-unfixed \
             --format json \
             --output /reports/backend-report.json \
             zeina-backend:latest
+
+      - name: Upload Trivy Backend Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-backend-report
+          path: trivy-reports
 
 
 # ======================
@@ -88,30 +90,32 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download Frontend Artifact
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
           name: frontend-image
-
-      - name: Debug files
-        run: ls -lah
 
       - name: Load Frontend Image
         run: docker load -i frontend.tar
 
       - name: Run Trivy Frontend Report
         run: |
-          mkdir -p reports
+          mkdir -p trivy-reports
 
           docker run --rm \
             -v /var/run/docker.sock:/var/run/docker.sock \
-            -v $PWD/reports:/reports \
+            -v $PWD/trivy-reports:/reports \
             aquasec/trivy:latest image \
             --severity HIGH,CRITICAL \
             --ignore-unfixed \
             --format json \
             --output /reports/frontend-report.json \
             zeina-frontend:latest
+
+      - name: Upload Trivy Frontend Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-frontend-report
+          path: trivy-reports
 
 
 # ======================
@@ -154,11 +158,14 @@ jobs:
 
     steps:
       - name: Create ZAP report folder
-        run: mkdir -p zap-reports
+        run: |
+          mkdir -p zap-reports
+          chmod 777 zap-reports
 
       - name: Run OWASP ZAP Baseline Scan
         run: |
           docker run --rm \
+            -u root \
             -v $PWD/zap-reports:/zap/wrk:rw \
             ghcr.io/zaproxy/zaproxy:stable \
             zap-baseline.py \
@@ -168,7 +175,7 @@ jobs:
             -w zap-warnings.md \
             -I
 
-      - name: Upload ZAP Reports
+      - name: Upload ZAP Report
         uses: actions/upload-artifact@v4
         with:
           name: zap-report
