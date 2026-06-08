@@ -9,8 +9,6 @@ env:
   BACKUP_DIR: /home/gaelle/g_app/backups
 
 jobs:
-
-
   # 1. PREPARE
   prepare:
     runs-on: [self-hosted, gaelle]
@@ -27,7 +25,6 @@ jobs:
         run: |
           VERSION=$(date +'%Y%m%d-%H%M%S')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-
 
   # 2. BACKUP
   backup:
@@ -53,6 +50,7 @@ jobs:
               -o $BACKUP_DIR/versions/${{ needs.prepare.outputs.version }}/frontend/frontend.tar \
               mern-frontend:latest
           fi
+ 
   # 3. SONARQUBE
   sonar:
     runs-on: [self-hosted, gaelle]
@@ -102,7 +100,6 @@ jobs:
         run: |
           docker compose -f $APP_DIR/docker-compose.yml down || true
 
-
   # 4. REMOVE OLD IMAGES
   remove_old_images:
     runs-on: [self-hosted, gaelle]
@@ -116,7 +113,6 @@ jobs:
       - name: Remove old frontend image
         run: |
           docker rmi mern-frontend:latest || true
-
 
   # 5. BUILD BACKEND
   build_backend:
@@ -146,7 +142,6 @@ jobs:
             --build-arg REACT_APP_BACKEND_URL=http://172.31.13.167:8000 \
             -t mern-frontend:latest ./frontend
 
-
   # 7. TRIVY SECURITY SCAN
   trivy_backend:
     runs-on: [self-hosted, gaelle]
@@ -174,10 +169,7 @@ jobs:
             --severity CRITICAL \
             --exit-code 1 \
             mern-backend:latest
-  
-            
-  
-  
+       
   trivy_frontend:
     runs-on: [self-hosted, gaelle]
     needs: build_frontend
@@ -204,10 +196,6 @@ jobs:
             --exit-code 1 \
             mern-frontend:latest
 
-
-          
-
-
   # 8. DEPLOY
   deploy:
     runs-on: [self-hosted, gaelle]
@@ -217,7 +205,6 @@ jobs:
       - name: Start containers
         run: |
           docker compose -f $APP_DIR/docker-compose.yml up -d
-
 
   # 9. VERIFY
   verify:
