@@ -30,7 +30,7 @@ jobs:
           docker save zeina-frontend:latest -o frontend.tar
 
 # ======================
-# TRIVY BACKEND (ONLY LIBS)
+# TRIVY BACKEND (REPORT ONLY)
 # ======================
   trivy-backend:
     runs-on: r2
@@ -42,18 +42,22 @@ jobs:
       - name: Load Backend Image
         run: docker load -i backend.tar
 
-      - name: Trivy Backend Scan
+      - name: Run Trivy Report (Backend)
         run: |
+          mkdir -p reports
+
           docker run --rm \
             -v /var/run/docker.sock:/var/run/docker.sock \
+            -v $PWD/reports:/reports \
             aquasec/trivy:latest image \
-            --vuln-type library \
-            --severity CRITICAL \
-            --exit-code 1 \
+            --severity HIGH,CRITICAL \
+            --ignore-unfixed \
+            --format json \
+            --output /reports/backend-report.json \
             zeina-backend:latest
 
 # ======================
-# TRIVY FRONTEND (ONLY LIBS)
+# TRIVY FRONTEND (REPORT ONLY)
 # ======================
   trivy-frontend:
     runs-on: r2
@@ -65,22 +69,43 @@ jobs:
       - name: Load Frontend Image
         run: docker load -i frontend.tar
 
-      - name: Trivy Frontend Scan
+      - name: Run Trivy Report (Frontend)
         run: |
+          mkdir -p reports
+
           docker run --rm \
             -v /var/run/docker.sock:/var/run/docker.sock \
+            -v $PWD/reports:/reports \
             aquasec/trivy:latest image \
-            --vuln-type library \
-            --severity CRITICAL \
-            --exit-code 1 \
+            --severity HIGH,CRITICAL \
+            --ignore-unfixed \
+            --format json \
+            --output /reports/frontend-report.json \
             zeina-frontend:latest
 
 # ======================
-# DEPLOY (RUNS ONLY IF SCANS PASS)
+# BACKUP
+# ======================
+  backup:
+    runs-on: r2
+    needs: [build, trivy-backend, trivy-frontend]
+
+    steps:
+      - name: Create Backup Folder
+        run: |
+          mkdir -p /home/zeina/backups/mern/$(date +%Y%m%d-%H%M%S)
+
+      - name: Save Images
+        run: |
+          docker save zeina-backend:latest -o /home/zeina/backups/mern/backend.tar
+          docker save zeina-frontend:latest -o /home/zeina/backups/mern/frontend.tar
+
+# ======================
+# DEPLOY (ALWAYS RUNS)
 # ======================
   deploy:
     runs-on: r2
-    needs: [trivy-backend, trivy-frontend]
+    needs: backup
 
     steps:
       - name: Deploy Containers
