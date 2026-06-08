@@ -52,48 +52,48 @@ jobs:
           fi
  
   # 3. SONARQUBE
-  sonar:
-    runs-on: [self-hosted, gaelle]
-    needs: backup
+#  sonar:
+#    runs-on: [self-hosted, gaelle]
+#    needs: backup
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+#    steps:
+#      - name: Checkout repository
+#        uses: actions/checkout@v4
+#        with:
+#          fetch-depth: 0
 
       # FRONTEND SCAN
-      - name: Sonar Frontend
-        uses: SonarSource/sonarqube-scan-action@v6
-        env:
-          SONAR_TOKEN: ${{ secrets.G_SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.G_SONAR_HOST_URL }}
-        with:
-          args: >
-            -Dsonar.projectKey=mern-todo-app
-            -Dsonar.projectName="MERN Todo Frontend"
-            -Dsonar.sources=frontend/src
-            -Dsonar.sourceEncoding=UTF-8
-            -Dsonar.exclusions=**/node_modules/**
+#      - name: Sonar Frontend
+#        uses: SonarSource/sonarqube-scan-action@v6
+#        env:
+#          SONAR_TOKEN: ${{ secrets.G_SONAR_TOKEN }}
+#          SONAR_HOST_URL: ${{ secrets.G_SONAR_HOST_URL }}
+#        with:
+#          args: >
+#            -Dsonar.projectKey=mern-todo-app
+#            -Dsonar.projectName="MERN Todo Frontend"
+#            -Dsonar.sources=frontend/src
+#            -Dsonar.sourceEncoding=UTF-8
+#            -Dsonar.exclusions=**/node_modules/**
 
       # BACKEND SCAN
-      - name: Sonar Backend
-        uses: SonarSource/sonarqube-scan-action@v6
-        env:
-          SONAR_TOKEN: ${{ secrets.GG_SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.GG_SONAR_HOST_URL }}
-        with:
-          args: >
-            -Dsonar.projectKey=mern-todo-app-backend
-            -Dsonar.projectName="MERN Todo Backend"
-            -Dsonar.sources=backend
-            -Dsonar.sourceEncoding=UTF-8
-            -Dsonar.exclusions=**/node_modules/**
+#      - name: Sonar Backend
+#        uses: SonarSource/sonarqube-scan-action@v6
+#        env:
+#          SONAR_TOKEN: ${{ secrets.GG_SONAR_TOKEN }}
+#          SONAR_HOST_URL: ${{ secrets.GG_SONAR_HOST_URL }}
+#        with:
+#          args: >
+#            -Dsonar.projectKey=mern-todo-app-backend
+#            -Dsonar.projectName="MERN Todo Backend"
+#            -Dsonar.sources=backend
+#            -Dsonar.sourceEncoding=UTF-8
+#            -Dsonar.exclusions=**/node_modules/**
   
   # 4. STOP OLD CONTAINERS
   stop_containers:
     runs-on: [self-hosted, gaelle]
-    needs: sonar
+    needs: backup
 
     steps:
       - name: Stop old containers
@@ -206,10 +206,33 @@ jobs:
         run: |
           docker compose -f $APP_DIR/docker-compose.yml up -d
 
-  # 9. VERIFY
-  verify:
+  
+  # 9. OWASP ZAP SECURITY SCAN
+  owasp_zap:
     runs-on: [self-hosted, gaelle]
     needs: deploy
+  
+    steps:
+      - name: Pull OWASP ZAP image
+        run: |
+          docker pull owasp/zap2docker-stable
+  
+      - name: Run OWASP ZAP Frontend Scan
+        run: |
+          docker run --rm \
+            owasp/zap2docker-stable zap-baseline.py \
+            -t http://172.31.13.167:3000
+  
+      - name: Run OWASP ZAP Backend Scan
+        run: |
+          docker run --rm \
+            owasp/zap2docker-stable zap-baseline.py \
+            -t http://172.31.13.167:8000
+
+  # 10. VERIFY
+  verify:
+    runs-on: [self-hosted, gaelle]
+    needs: owasp_zap
 
     steps:
       - name: Show running containers
