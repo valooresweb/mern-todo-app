@@ -223,24 +223,24 @@ jobs:
         run: |
           docker pull ghcr.io/zaproxy/zaproxy:stable
   
-      - name: Run OWASP ZAP Frontend Scan (save report)
+      - name: Run OWASP ZAP Frontend Scan
         run: |
           docker run --rm \
             -v $ZAP_DIR:/zap/wrk \
             ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
             -t http://172.31.13.167:3000 \
-            -r frontend-report.html \
-            -x frontend-report.xml \
+            -r /zap/wrk/frontend-report.html \
+            -x /zap/wrk/frontend-report.xml \
             -I || true
-  
-      - name: Run OWASP ZAP Backend Scan (save report)
+      
+      - name: Run OWASP ZAP Backend Scan
         run: |
           docker run --rm \
             -v $ZAP_DIR:/zap/wrk \
             ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
             -t http://172.31.13.167:8000 \
-            -r backend-report.html \
-            -x backend-report.xml \
+            -r /zap/wrk/backend-report.html \
+            -x /zap/wrk/backend-report.xml \
             -I || true
   
       - name: Show ZAP report location
