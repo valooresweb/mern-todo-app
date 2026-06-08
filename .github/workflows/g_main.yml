@@ -213,21 +213,40 @@ jobs:
     needs: deploy
   
     steps:
+      - name: Create ZAP versioned report directory
+        run: |
+          ZAP_DIR=$BACKUP_DIR/versions/${{ needs.prepare.outputs.version }}/zap
+          mkdir -p $ZAP_DIR
+          echo "ZAP_DIR=$ZAP_DIR" >> $GITHUB_ENV
+  
       - name: Pull OWASP ZAP image
         run: |
           docker pull ghcr.io/zaproxy/zaproxy:stable
   
-      - name: Run OWASP ZAP Frontend Scan
+      - name: Run OWASP ZAP Frontend Scan (save report)
         run: |
           docker run --rm \
+            -v $ZAP_DIR:/zap/wrk \
             ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
-            -t http://172.31.13.167:3000
+            -t http://172.31.13.167:3000 \
+            -r frontend-report.html \
+            -x frontend-report.xml \
+            -I || true
   
-      - name: Run OWASP ZAP Backend Scan
+      - name: Run OWASP ZAP Backend Scan (save report)
         run: |
           docker run --rm \
+            -v $ZAP_DIR:/zap/wrk \
             ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
-            -t http://172.31.13.167:8000
+            -t http://172.31.13.167:8000 \
+            -r backend-report.html \
+            -x backend-report.xml \
+            -I || true
+  
+      - name: Show ZAP report location
+        run: |
+          echo "ZAP reports saved in: $ZAP_DIR"
+          ls -R $ZAP_DIR
 
   # 10. VERIFY
   verify:
