@@ -24,83 +24,43 @@ jobs:
             -t zeina-frontend:latest \
             -f frontend/Dockerfile frontend
 
-      - name: Save Backend Image
-        run: docker save zeina-backend:latest -o backend.tar
-
-      - name: Save Frontend Image
-        run: docker save zeina-frontend:latest -o frontend.tar
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: backend-image
-          path: backend.tar
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: frontend-image
-          path: frontend.tar
-
 # ======================
-# TRIVY BACKEND SCAN (NON-BLOCKING)
+# TRIVY BACKEND SCAN (FIXED)
 # ======================
   trivy-backend:
     runs-on: r2
     needs: build
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: actions/download-artifact@v4
+      - name: Trivy Backend Scan
+        uses: aquasecurity/trivy-action@0.28.0
         with:
-          name: backend-image
-
-      - name: Load Backend Image
-        run: docker load -i backend.tar
-
-      - name: Install Trivy
-        run: |
-          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
-          | sh -s -- -b $HOME/.local/bin
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-      - name: Scan Backend Image (NON-BLOCKING)
-        run: |
-          trivy image \
-            --severity CRITICAL \
-            --vuln-type os,library \
-            --exit-code 0 \
-            zeina-backend:latest
+          image-ref: zeina-backend:latest
+          severity: CRITICAL
+          exit-code: 0
+          vuln-type: os,library
 
 # ======================
-# TRIVY FRONTEND SCAN (NON-BLOCKING)
+# TRIVY FRONTEND SCAN (FIXED)
 # ======================
   trivy-frontend:
     runs-on: r2
     needs: build
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: actions/download-artifact@v4
+      - name: Trivy Frontend Scan
+        uses: aquasecurity/trivy-action@0.28.0
         with:
-          name: frontend-image
-
-      - name: Load Frontend Image
-        run: docker load -i frontend.tar
-
-      - name: Install Trivy
-        run: |
-          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
-          | sh -s -- -b $HOME/.local/bin
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-      - name: Scan Frontend Image (NON-BLOCKING)
-        run: |
-          trivy image \
-            --severity CRITICAL \
-            --vuln-type os,library \
-            --exit-code 0 \
-            zeina-frontend:latest
+          image-ref: zeina-frontend:latest
+          severity: CRITICAL
+          exit-code: 0
+          vuln-type: os,library
 
 # ======================
 # BACKUP
@@ -113,8 +73,7 @@ jobs:
     steps:
       - name: Create Backup Folder
         run: |
-          BACKUP_TIME=$(date +%Y%m%d-%H%M%S)
-          mkdir -p /home/zeina/backups/mern/$BACKUP_TIME
+          mkdir -p /home/zeina/backups/mern/$(date +%Y%m%d-%H%M%S)
 
       - name: Save Images
         run: |
