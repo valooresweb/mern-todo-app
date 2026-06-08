@@ -24,12 +24,10 @@ jobs:
             -t zeina-frontend:latest \
             -f frontend/Dockerfile frontend
 
-      # SAVE IMAGES (IMPORTANT FIX)
-      - name: Save Backend Image
-        run: docker save zeina-backend:latest -o backend.tar
-
-      - name: Save Frontend Image
-        run: docker save zeina-frontend:latest -o frontend.tar
+      - name: Save Images
+        run: |
+          docker save zeina-backend:latest -o backend.tar
+          docker save zeina-frontend:latest -o frontend.tar
 
       - uses: actions/upload-artifact@v4
         with:
@@ -42,7 +40,7 @@ jobs:
           path: frontend.tar
 
 # ======================
-# TRIVY BACKEND SCAN
+# TRIVY BACKEND SCAN (IMAGE MODE)
 # ======================
   trivy-backend:
     runs-on: r2
@@ -58,16 +56,17 @@ jobs:
       - name: Load Backend Image
         run: docker load -i backend.tar
 
-      - name: Trivy Backend Scan
-        uses: aquasecurity/trivy-action@0.24.0
-        with:
-          image-ref: zeina-backend:latest
-          severity: CRITICAL
-          exit-code: 1
-          vuln-type: os,library
+      - name: Run Trivy (Docker Image)
+        run: |
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy:latest image \
+            --severity CRITICAL \
+            --exit-code 1 \
+            zeina-backend:latest
 
 # ======================
-# TRIVY FRONTEND SCAN
+# TRIVY FRONTEND SCAN (IMAGE MODE)
 # ======================
   trivy-frontend:
     runs-on: r2
@@ -83,13 +82,14 @@ jobs:
       - name: Load Frontend Image
         run: docker load -i frontend.tar
 
-      - name: Trivy Frontend Scan
-        uses: aquasecurity/trivy-action@0.24.0
-        with:
-          image-ref: zeina-frontend:latest
-          severity: CRITICAL
-          exit-code: 1
-          vuln-type: os,library
+      - name: Run Trivy (Docker Image)
+        run: |
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy:latest image \
+            --severity CRITICAL \
+            --exit-code 1 \
+            zeina-frontend:latest
 
 # ======================
 # BACKUP
