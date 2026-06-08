@@ -10,7 +10,6 @@ RUN npm ci
 
 COPY . .
 
-# IMPORTANT: injected from pipeline
 ARG REACT_APP_BACKEND_URL
 ENV REACT_APP_BACKEND_URL=$REACT_APP_BACKEND_URL
 
@@ -34,11 +33,11 @@ COPY --from=build /app/build /usr/share/nginx/html
 
 RUN chown -R appuser:appgroup /usr/share/nginx/html \
     && chown -R appuser:appgroup /var/cache/nginx \
-    && chown -R appuser:appgroup /var/log/nginx \
-    && mkdir -p /var/run/nginx \
-    && chown -R appuser:appgroup /var/run/nginx
+    && chown -R appuser:appgroup /var/log/nginx
 
-#USER appuser
+# IMPORTANT FIX:
+# Run nginx as root to avoid /run/nginx.pid permission error
+# USER appuser   <-- DO NOT USE
 
 EXPOSE 80
 
