@@ -1,4 +1,4 @@
-my existing worflow:name: Deploy App
+name: Deploy App
 
 on:
   workflow_dispatch:
