@@ -6,10 +6,51 @@ on:
 jobs:
 
 # ======================
+# SONAR FRONTEND
+# ======================
+  sonar-frontend:
+    runs-on: r2
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Sonar Frontend Scan
+        uses: SonarSource/sonarqube-scan-action@v6
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKENZEINA }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URLZEINA }}
+        with:
+          args: >
+            -Dsonar.projectKey=new-mern-project
+            -Dsonar.sources=frontend
+
+# ======================
+# SONAR BACKEND
+# ======================
+  sonar-backend:
+    runs-on: r2
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Sonar Backend Scan
+        uses: SonarSource/sonarqube-scan-action@v6
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKENZEINABACKEND2 }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URLZEINABACKEND2 }}
+        with:
+          args: >
+            -Dsonar.projectKey=Mern-app-backend
+            -Dsonar.sources=backend
+
+# ======================
 # BUILD IMAGES
 # ======================
   build:
     runs-on: r2
+    needs: [sonar-frontend, sonar-backend]
 
     steps:
       - uses: actions/checkout@v4
@@ -25,7 +66,7 @@ jobs:
             -f frontend/Dockerfile frontend
 
 # ======================
-# TRIVY BACKEND SCAN
+# TRIVY BACKEND SCAN (FIXED)
 # ======================
   trivy-backend:
     runs-on: r2
@@ -34,16 +75,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: actions/download-artifact@v4
+        with:
+          name: backend-image
+
+      - name: Load Backend Image
+        run: docker load -i backend.tar
+
       - name: Trivy Backend Scan
         uses: aquasecurity/trivy-action@0.24.0
         with:
           image-ref: zeina-backend:latest
           severity: CRITICAL
-          exit-code: 0
+          exit-code: 1
           vuln-type: os,library
 
 # ======================
-# TRIVY FRONTEND SCAN
+# TRIVY FRONTEND SCAN (FIXED)
 # ======================
   trivy-frontend:
     runs-on: r2
@@ -52,12 +100,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: actions/download-artifact@v4
+        with:
+          name: frontend-image
+
+      - name: Load Frontend Image
+        run: docker load -i frontend.tar
+
       - name: Trivy Frontend Scan
         uses: aquasecurity/trivy-action@0.24.0
         with:
           image-ref: zeina-frontend:latest
           severity: CRITICAL
-          exit-code: 0
+          exit-code: 1
           vuln-type: os,library
 
 # ======================
@@ -66,7 +121,6 @@ jobs:
   backup:
     runs-on: r2
     needs: [build, trivy-backend, trivy-frontend]
-    if: always()
 
     steps:
       - name: Create Backup Folder
