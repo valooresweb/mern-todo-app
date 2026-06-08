@@ -38,7 +38,7 @@ RUN chown -R appuser:appgroup /usr/share/nginx/html \
     && mkdir -p /var/run/nginx \
     && chown -R appuser:appgroup /var/run/nginx
 
-USER appuser
+#USER appuser
 
 EXPOSE 80
 
