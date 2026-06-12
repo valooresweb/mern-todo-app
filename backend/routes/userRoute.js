@@ -6,12 +6,5 @@ const router = express.Router();
 router.post("/login",loginUser);
 router.post("/register",registerUser);
 router.get("/getuser", requireAuth, getUser)
-router.get("/test", (req, res) => {
-    console.log("HIT USER TEST - PID:", process.pid);
 
-    res.json({
-        message: "OK",
-        pid: process.pid
-    });
-});
 export default router;
