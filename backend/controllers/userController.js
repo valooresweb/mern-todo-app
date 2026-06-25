@@ -35,35 +35,48 @@ const loginUser = async (req,res) => {
 }
 
 //register user
-const registerUser = async (req,res) => {
-    const {name, email, password} = req.body;
-    try{
-        //check if user already exists
-        const exists = await userModel.findOne({email})
-        if(exists){
-            return res.status(400).json({message: "User already exists"})
+const registerUser = async (req, res) => {
+    try {
+        const { name, email, password } = req.body || {};
+
+        // 1. basic safety check (IMPORTANT)
+        if (!name || !email || !password) {
+            return res.status(400).json({ message: "Please enter all fields" });
         }
-        if (validator.isEmpty(name) || validator.isEmpty(email) || validator.isEmpty(password)) {
-            return res.status(400).json({message: "Please enter all fields"})
+
+        // 2. validate email
+        if (!validator.isEmail(email)) {
+            return res.status(400).json({ message: "Please enter a valid email" });
         }
-        if(!validator.isEmail(email)){
-            return res.status(400).json({message: "Please enter a valid email"})
+
+        // 3. strong password check
+        if (!validator.isStrongPassword(password)) {
+            return res.status(400).json({ message: "Please enter a strong password" });
         }
-        if(!validator.isStrongPassword(password)){
-            return res.status(400).json({message: "Please enter a strong password"})
+
+        // 4. check existing user
+        const exists = await userModel.findOne({ email });
+        if (exists) {
+            return res.status(400).json({ message: "User already exists" });
         }
+
+        // 5. hash password
         const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt)
+        const hashedPassword = await bcrypt.hash(password, salt);
 
-        const newUser = new userModel({name, email, password: hashedPassword})
-        const user = await newUser.save()
-        const token = createToken(user._id)
-        res.status(200).json({user,token})
+        // 6. create user
+        const newUser = new userModel({ name, email, password: hashedPassword });
+        const user = await newUser.save();
 
-    } catch(error){
-        res.status(500).json({message: error.message})
+        const token = createToken(user._id);
+
+        res.status(200).json({ user, token });
+
+    } catch (error) {
+        console.log("REGISTER ERROR:", error);
+        res.status(500).json({ message: error.message });
     }
-}
+};
 
 //get user info
 const getUser = async (req,res) => {
